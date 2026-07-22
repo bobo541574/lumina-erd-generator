@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../schema_parser/domain/models/project_schema.dart';
 import '../../../schema_parser/domain/models/table_schema.dart';
-import '../../../schema_parser/domain/models/relationship_schema.dart';
 import '../../../project_loader/presentation/providers/project_provider.dart';
 import '../widgets/erd_canvas.dart';
 

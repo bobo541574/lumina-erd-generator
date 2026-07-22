@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../schema_parser/domain/models/table_schema.dart';
 import '../../../../core/constants/app_constants.dart';
 
@@ -24,9 +25,30 @@ class TableNode extends StatefulWidget {
   State<TableNode> createState() => _TableNodeState();
 }
 
-class _TableNodeState extends State<TableNode> {
+class _TableNodeState extends State<TableNode>
+    with SingleTickerProviderStateMixin {
   Offset _dragStart = Offset.zero;
   bool _isDragging = false;
+  late AnimationController _rippleController;
+  late Animation<double> _rippleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _rippleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _rippleController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _rippleController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,52 +70,96 @@ class _TableNodeState extends State<TableNode> {
             ? Colors.orange.withValues(alpha: 0.05)
             : colorScheme.surface;
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      onPanStart: (details) {
-        _dragStart = details.localPosition;
-        _isDragging = false;
-      },
-      onPanUpdate: (details) {
-        if (!_isDragging) {
-          final distance = (details.localPosition - _dragStart).distance;
-          if (distance > 5) {
-            _isDragging = true;
+    final semanticsLabel =
+        '${widget.table.name} table, ${widget.table.columns.length} columns'
+        '${widget.table.isPivot ? ', pivot table' : ''}'
+        '${widget.isSelected ? ', selected' : ''}'
+        '${widget.isHighlighted ? ', related to selected' : ''}';
+
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      selected: widget.isSelected,
+      child: Focus(
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              (event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.space)) {
+            widget.onTap();
+            return KeyEventResult.handled;
           }
-        }
-        if (_isDragging) {
-          widget.onDrag(details.delta);
-        }
-      },
-      onPanEnd: (_) => _isDragging = false,
-      child: Container(
-        width: AppConstants.defaultNodeWidth,
-        constraints: BoxConstraints(
-          minHeight: widget.compactMode ? 80 : AppConstants.defaultNodeMinHeight,
-          maxHeight: widget.compactMode ? 200 : AppConstants.defaultNodeMaxHeight,
-        ),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: borderColor,
-            width: widget.isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: widget.isSelected ? 0.12 : 0.06),
-              blurRadius: widget.isSelected ? 12 : 4,
-              offset: const Offset(0, 2),
+          return KeyEventResult.ignored;
+        },
+        child: ScaleTransition(
+          scale: _rippleAnimation,
+          child: GestureDetector(
+            onTap: () {
+              _rippleController.forward().then((_) => _rippleController.reverse());
+              widget.onTap();
+            },
+            onPanStart: (details) {
+              _dragStart = details.localPosition;
+              _isDragging = false;
+            },
+            onPanUpdate: (details) {
+              if (!_isDragging) {
+                final distance = (details.localPosition - _dragStart).distance;
+                if (distance > 5) {
+                  _isDragging = true;
+                }
+              }
+              if (_isDragging) {
+                widget.onDrag(details.delta);
+              }
+            },
+            onPanEnd: (_) => _isDragging = false,
+            child: Material(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () {
+                  _rippleController
+                      .forward()
+                      .then((_) => _rippleController.reverse());
+                  widget.onTap();
+                },
+                borderRadius: BorderRadius.circular(8),
+                splashColor: colorScheme.primary.withValues(alpha: 0.1),
+                highlightColor: colorScheme.primary.withValues(alpha: 0.05),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: AppConstants.defaultNodeWidth,
+                  constraints: BoxConstraints(
+                    minHeight: widget.compactMode ? 80 : AppConstants.defaultNodeMinHeight,
+                    maxHeight: widget.compactMode ? 200 : AppConstants.defaultNodeMaxHeight,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: borderColor,
+                      width: widget.isSelected ? 2 : 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                            alpha: widget.isSelected ? 0.12 : 0.06),
+                        blurRadius: widget.isSelected ? 12 : 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildHeader(context, colorScheme),
+                      _buildColumnList(context, columns, showMore),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(context, colorScheme),
-            _buildColumnList(context, columns, showMore),
-          ],
+          ),
         ),
       ),
     );
@@ -189,37 +255,43 @@ class _TableNodeState extends State<TableNode> {
   Widget _buildColumnItem(BuildContext context, dynamic column) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: Row(
-        children: [
-          _buildColumnIcon(context, column),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              column.name,
+    return Semantics(
+      label: '${column.name}, ${column.type}'
+          '${column.isPrimaryKey ? ', primary key' : ''}'
+          '${column.isForeignKey ? ', foreign key' : ''}'
+          '${column.nullable ? ', nullable' : ''}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        child: Row(
+          children: [
+            _buildColumnIcon(context, column),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                column.name,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      color: column.isPrimaryKey || column.isForeignKey
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
+                      fontWeight: column.isPrimaryKey || column.isForeignKey
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              _shortType(column.type),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontFamily: 'monospace',
-                    fontSize: 11,
-                    color: column.isPrimaryKey || column.isForeignKey
-                        ? colorScheme.onSurface
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: column.isPrimaryKey || column.isForeignKey
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+                    fontSize: 9,
+                    color: colorScheme.outline,
                   ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          Text(
-            _shortType(column.type),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontFamily: 'monospace',
-                  fontSize: 9,
-                  color: colorScheme.outline,
-                ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

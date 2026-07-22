@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../../schema_parser/domain/models/table_schema.dart';
 import '../../../schema_parser/domain/models/relationship_schema.dart';
@@ -34,10 +33,7 @@ class ErdCanvas extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          CustomPaint(
-            size: const Size(3000, 3000),
-            painter: _GridPainter(),
-          ),
+          CustomPaint(size: const Size(3000, 3000), painter: _GridPainter()),
           ..._buildRelationshipLines(),
           ..._buildTableNodes(),
         ],
@@ -74,7 +70,8 @@ class ErdCanvas extends StatelessWidget {
         return const SizedBox.shrink();
       }
 
-      final isHighlighted = selectedTableId != null &&
+      final isHighlighted =
+          selectedTableId != null &&
           (rel.sourceTable == selectedTableId ||
               rel.targetTable == selectedTableId);
 

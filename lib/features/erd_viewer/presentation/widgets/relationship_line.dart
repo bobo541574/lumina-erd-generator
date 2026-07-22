@@ -32,8 +32,8 @@ class RelationshipLine extends CustomPainter {
     final color = isHighlighted
         ? Colors.orange
         : relationship.isInferred
-            ? Colors.orange.withValues(alpha: 0.6)
-            : Colors.blue.withValues(alpha: 0.6);
+        ? Colors.orange.withValues(alpha: 0.6)
+        : Colors.blue.withValues(alpha: 0.6);
 
     final paint = Paint()
       ..color = color
@@ -67,8 +67,14 @@ class RelationshipLine extends CustomPainter {
 
     final path = Path()
       ..moveTo(start.dx, start.dy)
-      ..cubicTo(controlPoint1.dx, controlPoint1.dy, controlPoint2.dx,
-          controlPoint2.dy, end.dx, end.dy);
+      ..cubicTo(
+        controlPoint1.dx,
+        controlPoint1.dy,
+        controlPoint2.dx,
+        controlPoint2.dy,
+        end.dx,
+        end.dy,
+      );
 
     canvas.drawPath(path, paint);
   }
@@ -85,8 +91,8 @@ class RelationshipLine extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final angle = atan2(end.dy - start.dy, end.dx - start.dx);
-    final arrowLength = 10.0;
-    final arrowWidth = 6.0;
+    const arrowLength = 10.0;
+    const arrowWidth = 6.0;
 
     final p1 = end;
     final p2 = Offset(
@@ -107,12 +113,7 @@ class RelationshipLine extends CustomPainter {
     canvas.drawPath(path, arrowPaint);
   }
 
-  void _drawCrowFoot(
-    Canvas canvas,
-    Offset target,
-    Offset source,
-    Color color,
-  ) {
+  void _drawCrowFoot(Canvas canvas, Offset target, Offset source, Color color) {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 2
@@ -120,8 +121,8 @@ class RelationshipLine extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final angle = atan2(source.dy - target.dy, source.dx - target.dx);
-    final spread = pi / 5;
-    final length = 12.0;
+    const spread = pi / 5;
+    const length = 12.0;
 
     final left = Offset(
       target.dx + length * cos(angle + spread),
@@ -144,16 +145,13 @@ class RelationshipLine extends CustomPainter {
     if (distance == 0) return center;
 
     final halfWidth = width / 2;
-    final halfHeight = 60.0;
+    const halfHeight = 60.0;
 
     final scaleX = halfWidth / distance;
     final scaleY = halfHeight / distance;
     final scale = min(scaleX, scaleY);
 
-    return Offset(
-      center.dx + dx * scale,
-      center.dy + dy * scale,
-    );
+    return Offset(center.dx + dx * scale, center.dy + dy * scale);
   }
 
   @override

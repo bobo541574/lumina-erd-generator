@@ -22,9 +22,10 @@ class InvalidLaravelProjectException extends AppException {
     String message = 'The selected directory is not a valid Laravel project.',
     String? suggestion,
   }) : super(
-          message: message,
-          suggestion: suggestion ?? 'Ensure the directory contains an artisan file.',
-        );
+         message: message,
+         suggestion:
+             suggestion ?? 'Ensure the directory contains an artisan file.',
+       );
 }
 
 class MigrationParseException extends AppException {
@@ -36,10 +37,10 @@ class MigrationParseException extends AppException {
     String? suggestion,
     dynamic originalError,
   }) : super(
-          message: message,
-          suggestion: suggestion,
-          originalError: originalError,
-        );
+         message: message,
+         suggestion: suggestion,
+         originalError: originalError,
+       );
 }
 
 class ModelParseException extends AppException {
@@ -51,10 +52,10 @@ class ModelParseException extends AppException {
     String? suggestion,
     dynamic originalError,
   }) : super(
-          message: message,
-          suggestion: suggestion,
-          originalError: originalError,
-        );
+         message: message,
+         suggestion: suggestion,
+         originalError: originalError,
+       );
 }
 
 class ExportException extends AppException {
@@ -66,8 +67,8 @@ class ExportException extends AppException {
     String? suggestion,
     dynamic originalError,
   }) : super(
-          message: message,
-          suggestion: suggestion,
-          originalError: originalError,
-        );
+         message: message,
+         suggestion: suggestion,
+         originalError: originalError,
+       );
 }

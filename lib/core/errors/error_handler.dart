@@ -10,7 +10,8 @@ class ErrorHandler {
 
     final message = error.toString();
 
-    if (message.contains('artisan') || message.contains('not a valid Laravel')) {
+    if (message.contains('artisan') ||
+        message.contains('not a valid Laravel')) {
       return const InvalidLaravelProjectException();
     }
 

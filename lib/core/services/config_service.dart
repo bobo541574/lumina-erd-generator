@@ -21,7 +21,7 @@ class AppConfig {
     this.ignoredTables = const [],
     this.defaultLayout = 'grid',
     this.colorScheme = 'light',
-    this.lineStyle = 'curved',
+    this.lineStyle = 'orthogonal',
     this.notationStyle = 'crowsFoot',
     this.defaultExportFormat = 'mermaid',
     this.autoIncludeDataDict = true,

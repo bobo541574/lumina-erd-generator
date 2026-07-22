@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:laravel_erd_generator/features/project_loader/domain/services/project_parser.dart';
-import 'package:laravel_erd_generator/features/export/domain/services/export_service.dart';
+import 'package:lumina_erd_generator/features/project_loader/domain/services/project_parser.dart';
+import 'package:lumina_erd_generator/features/export/domain/services/export_service.dart';
 
 void main() {
   group('Full Workflow Integration', () {

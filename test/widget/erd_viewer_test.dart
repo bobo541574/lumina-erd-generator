@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:laravel_erd_generator/app.dart';
+import 'package:lumina_erd_generator/app.dart';
 
 void main() {
   testWidgets('ERD Viewer shows empty state when no schema', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: LaravelErdApp()));
+    await tester.pumpWidget(const ProviderScope(child: LuminaErdApp()));
 
     // Navigate to ERD tab
     await tester.tap(find.text('ERD'));
@@ -24,7 +24,7 @@ void main() {
   testWidgets('Schema Viewer shows empty state when no schema', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: LaravelErdApp()));
+    await tester.pumpWidget(const ProviderScope(child: LuminaErdApp()));
 
     // Navigate to Schema tab
     await tester.tap(find.text('Schema'));
@@ -36,14 +36,14 @@ void main() {
   testWidgets('Project Loader shows initial state', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: LaravelErdApp()));
+    await tester.pumpWidget(const ProviderScope(child: LuminaErdApp()));
 
-    expect(find.text('Laravel ERD Generator'), findsAtLeastNWidgets(1));
+    expect(find.text('Lumina ERD Studio'), findsAtLeastNWidgets(1));
     expect(find.text('Select Laravel Project'), findsOneWidget);
   });
 
   testWidgets('Navigation between tabs works', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: LaravelErdApp()));
+    await tester.pumpWidget(const ProviderScope(child: LuminaErdApp()));
 
     // Start on Project tab - should have Select button
     expect(find.text('Select Laravel Project'), findsOneWidget);

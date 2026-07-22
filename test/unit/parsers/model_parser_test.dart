@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:laravel_erd_generator/features/schema_parser/data/parsers/model_parser.dart';
-import 'package:laravel_erd_generator/features/schema_parser/domain/models/table_schema.dart';
-import 'package:laravel_erd_generator/features/schema_parser/domain/models/column_schema.dart';
+import 'package:lumina_erd_generator/features/schema_parser/data/parsers/model_parser.dart';
+import 'package:lumina_erd_generator/features/schema_parser/domain/models/table_schema.dart';
+import 'package:lumina_erd_generator/features/schema_parser/domain/models/column_schema.dart';
 
 void main() {
   group('ModelParser', () {

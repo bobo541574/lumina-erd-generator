@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:laravel_erd_generator/features/export/domain/services/export_service.dart';
-import 'package:laravel_erd_generator/features/schema_parser/domain/models/project_schema.dart';
-import 'package:laravel_erd_generator/features/schema_parser/domain/models/table_schema.dart';
-import 'package:laravel_erd_generator/features/schema_parser/domain/models/column_schema.dart';
-import 'package:laravel_erd_generator/features/schema_parser/domain/models/relationship_schema.dart';
+import 'package:lumina_erd_generator/features/export/domain/services/export_service.dart';
+import 'package:lumina_erd_generator/features/schema_parser/domain/models/project_schema.dart';
+import 'package:lumina_erd_generator/features/schema_parser/domain/models/table_schema.dart';
+import 'package:lumina_erd_generator/features/schema_parser/domain/models/column_schema.dart';
+import 'package:lumina_erd_generator/features/schema_parser/domain/models/relationship_schema.dart';
 
 void main() {
   late ProjectSchema testSchema;

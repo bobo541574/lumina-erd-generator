@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/config_service.dart';
-
-final configProvider = StateNotifierProvider<ConfigNotifier, AppConfig>(
-  (ref) => ConfigNotifier(),
-);
-
-class ConfigNotifier extends StateNotifier<AppConfig> {
-  ConfigNotifier() : super(AppConfig.defaults()) {
-    _load();
-  }
-
-  Future<void> _load() async {
-    state = await ConfigService.load();
-  }
-
-  Future<void> update(AppConfig config) async {
-    state = config;
-    await ConfigService.save(config);
-  }
-}
+import '../../../../core/providers/config_provider.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -31,42 +16,52 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _buildSection(
             context,
             title: 'Parsing',
-            icon: Icons.analytics,
+            icon: Icons.analytics_outlined,
+            sectionColor: Theme.of(context).extension<AppColors>()!.info,
             children: [
               _buildSwitchTile(
                 context,
+                icon: Icons.model_training,
                 title: 'Model-based inference',
                 subtitle:
-                    'Infer relationships from model files when no explicit FKs found',
+                    'Infer relationships from model files when no explicit foreign keys are found in migrations',
                 value: config.enableModelParsing,
                 onChanged: (value) {
+                  HapticFeedback.lightImpact();
                   ref
                       .read(configProvider.notifier)
                       .update(config.copyWith(enableModelParsing: value));
                 },
               ),
+              const Divider(height: 1, indent: 56),
               _buildSwitchTile(
                 context,
+                icon: Icons.rule,
                 title: 'Strict mode',
-                subtitle: 'Only show explicit foreign keys from migrations',
+                subtitle:
+                    'Only show explicit foreign keys defined in migrations',
                 value: config.strictMode,
                 onChanged: (value) {
+                  HapticFeedback.lightImpact();
                   ref
                       .read(configProvider.notifier)
                       .update(config.copyWith(strictMode: value));
                 },
               ),
+              const Divider(height: 1, indent: 56),
               _buildSwitchTile(
                 context,
+                icon: Icons.delete_outline,
                 title: 'Include soft-deleted tables',
-                subtitle: 'Show tables with deleted_at column',
+                subtitle: 'Show tables that have a deleted_at column',
                 value: config.includeSoftDeletes,
                 onChanged: (value) {
+                  HapticFeedback.lightImpact();
                   ref
                       .read(configProvider.notifier)
                       .update(config.copyWith(includeSoftDeletes: value));
@@ -74,122 +69,186 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildSection(
             context,
             title: 'Display',
             icon: Icons.display_settings,
+            sectionColor: Theme.of(
+              context,
+            ).extension<AppColors>()!.explicitRelation,
             children: [
-              _buildDropdownTile(
+              _buildSelectorTile(
                 context,
+                icon: Icons.grid_view,
                 title: 'Default layout',
-                value: config.defaultLayout,
-                items: const [
-                  DropdownMenuItem(value: 'grid', child: Text('Grid')),
-                  DropdownMenuItem(
+                currentValue: config.defaultLayout,
+                options: const [
+                  _SelectorOption(
+                    value: 'grid',
+                    label: 'Grid',
+                    description: 'Snap tables to an evenly spaced grid',
+                  ),
+                  _SelectorOption(
                     value: 'forceDirected',
-                    child: Text('Force-directed'),
+                    label: 'Force-directed',
+                    description: 'Physics-based auto-arrangement',
                   ),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(configProvider.notifier)
-                        .update(config.copyWith(defaultLayout: value));
-                  }
+                  ref
+                      .read(configProvider.notifier)
+                      .update(config.copyWith(defaultLayout: value));
                 },
               ),
-              _buildDropdownTile(
+              const Divider(height: 1, indent: 56),
+              _buildSelectorTile(
                 context,
+                icon: Icons.palette_outlined,
                 title: 'Color scheme',
-                value: config.colorScheme,
-                items: const [
-                  DropdownMenuItem(value: 'light', child: Text('Light')),
-                  DropdownMenuItem(value: 'dark', child: Text('Dark')),
-                  DropdownMenuItem(value: 'system', child: Text('System')),
+                currentValue: config.colorScheme,
+                options: const [
+                  _SelectorOption(
+                    value: 'light',
+                    label: 'Light',
+                    description: 'Always use light theme',
+                  ),
+                  _SelectorOption(
+                    value: 'dark',
+                    label: 'Dark',
+                    description: 'Always use dark theme',
+                  ),
+                  _SelectorOption(
+                    value: 'system',
+                    label: 'System',
+                    description: 'Follow device setting',
+                  ),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(configProvider.notifier)
-                        .update(config.copyWith(colorScheme: value));
-                  }
+                  ref
+                      .read(configProvider.notifier)
+                      .update(config.copyWith(colorScheme: value));
                 },
               ),
-              _buildDropdownTile(
+              const Divider(height: 1, indent: 56),
+              _buildSelectorTile(
                 context,
+                icon: Icons.timeline,
                 title: 'Line style',
-                value: config.lineStyle,
-                items: const [
-                  DropdownMenuItem(value: 'curved', child: Text('Curved')),
-                  DropdownMenuItem(value: 'straight', child: Text('Straight')),
-                  DropdownMenuItem(
+                currentValue: config.lineStyle,
+                options: const [
+                  _SelectorOption(
                     value: 'orthogonal',
-                    child: Text('Orthogonal'),
+                    label: 'Orthogonal',
+                    description: 'Right-angle lines like dbdiagram.io',
+                  ),
+                  _SelectorOption(
+                    value: 'curved',
+                    label: 'Curved',
+                    description: 'Smooth bezier curves between tables',
+                  ),
+                  _SelectorOption(
+                    value: 'straight',
+                    label: 'Straight',
+                    description: 'Direct diagonal lines',
                   ),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(configProvider.notifier)
-                        .update(config.copyWith(lineStyle: value));
-                  }
+                  ref
+                      .read(configProvider.notifier)
+                      .update(config.copyWith(lineStyle: value));
                 },
               ),
-              _buildDropdownTile(
+              const Divider(height: 1, indent: 56),
+              _buildSelectorTile(
                 context,
+                icon: Icons.account_tree,
                 title: 'Notation style',
-                value: config.notationStyle,
-                items: const [
-                  DropdownMenuItem(
+                currentValue: config.notationStyle,
+                options: const [
+                  _SelectorOption(
                     value: 'crowsFoot',
-                    child: Text("Crow's Foot"),
+                    label: "Crow's Foot",
+                    description: 'Industry standard ERD notation',
                   ),
-                  DropdownMenuItem(value: 'arrow', child: Text('Arrow')),
-                  DropdownMenuItem(value: 'uml', child: Text('UML')),
+                  _SelectorOption(
+                    value: 'arrow',
+                    label: 'Arrow',
+                    description: 'Simple arrow notation',
+                  ),
+                  _SelectorOption(
+                    value: 'uml',
+                    label: 'UML',
+                    description: 'Unified Modeling Language style',
+                  ),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(configProvider.notifier)
-                        .update(config.copyWith(notationStyle: value));
-                  }
+                  ref
+                      .read(configProvider.notifier)
+                      .update(config.copyWith(notationStyle: value));
                 },
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildSection(
             context,
             title: 'Export',
-            icon: Icons.file_download,
+            icon: Icons.file_download_outlined,
+            sectionColor: Theme.of(context).extension<AppColors>()!.success,
             children: [
-              _buildDropdownTile(
+              _buildSelectorTile(
                 context,
+                icon: Icons.description_outlined,
                 title: 'Default format',
-                value: config.defaultExportFormat,
-                items: const [
-                  DropdownMenuItem(value: 'mermaid', child: Text('Mermaid')),
-                  DropdownMenuItem(value: 'dbml', child: Text('DBML')),
-                  DropdownMenuItem(value: 'html', child: Text('HTML')),
-                  DropdownMenuItem(value: 'markdown', child: Text('Markdown')),
-                  DropdownMenuItem(value: 'plantuml', child: Text('PlantUML')),
-                  DropdownMenuItem(value: 'graphviz', child: Text('Graphviz')),
+                currentValue: config.defaultExportFormat,
+                options: const [
+                  _SelectorOption(
+                    value: 'mermaid',
+                    label: 'Mermaid',
+                    description: 'For GitHub, GitLab, docs',
+                  ),
+                  _SelectorOption(
+                    value: 'dbml',
+                    label: 'DBML',
+                    description: 'For dbdiagram.io',
+                  ),
+                  _SelectorOption(
+                    value: 'html',
+                    label: 'HTML',
+                    description: 'Interactive SVG diagram',
+                  ),
+                  _SelectorOption(
+                    value: 'markdown',
+                    label: 'Markdown',
+                    description: 'Data dictionary format',
+                  ),
+                  _SelectorOption(
+                    value: 'plantuml',
+                    label: 'PlantUML',
+                    description: 'For UML tools',
+                  ),
+                  _SelectorOption(
+                    value: 'graphviz',
+                    label: 'Graphviz',
+                    description: 'Graph visualization (DOT)',
+                  ),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(configProvider.notifier)
-                        .update(config.copyWith(defaultExportFormat: value));
-                  }
+                  ref
+                      .read(configProvider.notifier)
+                      .update(config.copyWith(defaultExportFormat: value));
                 },
               ),
+              const Divider(height: 1, indent: 56),
               _buildSwitchTile(
                 context,
+                icon: Icons.auto_stories,
                 title: 'Auto-include data dictionary',
-                subtitle: 'Include markdown summary with exports',
+                subtitle: 'Attach a markdown summary to every export',
                 value: config.autoIncludeDataDict,
                 onChanged: (value) {
+                  HapticFeedback.lightImpact();
                   ref
                       .read(configProvider.notifier)
                       .update(config.copyWith(autoIncludeDataDict: value));
@@ -197,104 +256,165 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildSection(
             context,
             title: 'Data Management',
-            icon: Icons.storage,
+            icon: Icons.storage_outlined,
+            sectionColor: Theme.of(context).extension<AppColors>()!.warning,
             children: [
               ListTile(
-                leading: const Icon(Icons.delete_sweep),
+                leading: Icon(
+                  Icons.delete_sweep_outlined,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 title: const Text('Clear recent projects'),
                 subtitle: const Text('Remove all recent project paths'),
                 onTap: () async {
+                  HapticFeedback.mediumImpact();
                   await ConfigService.saveRecentProjects([]);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Recent projects cleared')),
+                      const SnackBar(
+                        content: Text('Recent projects cleared'),
+                        duration: Duration(seconds: 2),
+                      ),
                     );
                   }
                 },
               ),
+              const Divider(height: 1, indent: 56),
               ListTile(
-                leading: const Icon(Icons.restore),
-                title: const Text('Reset to defaults'),
-                subtitle: const Text('Restore all settings to defaults'),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Reset Settings'),
-                      content: const Text(
-                        'Are you sure you want to reset all settings to defaults?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            ref
-                                .read(configProvider.notifier)
-                                .update(AppConfig.defaults());
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Settings reset to defaults'),
-                              ),
-                            );
-                          },
-                          child: const Text('Reset'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                leading: Icon(
+                  Icons.restore,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  'Reset to defaults',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                subtitle: const Text(
+                  'Restore all settings to factory defaults',
+                ),
+                onTap: () => _showResetDialog(context, ref),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildSection(
             context,
             title: 'About',
             icon: Icons.info_outline,
+            sectionColor: Theme.of(context).colorScheme.outline,
             children: [
-              ListTile(
-                leading: const Icon(Icons.star_rate),
-                title: const Text('Rate this app'),
-                subtitle: const Text('Help us improve with your rating'),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.bug_report),
-                title: const Text('Report a bug'),
-                subtitle: const Text('Found an issue? Let us know'),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.feedback),
-                title: const Text('Send feedback'),
-                subtitle: const Text('Suggest features or improvements'),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.privacy_tip),
-                title: const Text('Privacy Policy'),
-                onTap: () {},
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Icons.account_tree,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      AppConstants.appName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Version ${AppConstants.appVersion}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Analyze Laravel projects and generate\ninteractive Entity Relationship Diagrams.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 32),
           Center(
-            child: Text(
-              'Laravel ERD Studio v1.0.0',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.flutter_dash,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Built with Flutter',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  void _showResetDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          size: 40,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: const Text('Reset Settings'),
+        content: const Text(
+          'This will reset all settings to their factory defaults.\n\n'
+          'Your projects and recent history will not be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              HapticFeedback.heavyImpact();
+              ref.read(configProvider.notifier).update(AppConfig.defaults());
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Settings reset to defaults'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Reset'),
+          ),
         ],
       ),
     );
@@ -304,9 +424,11 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context, {
     required String title,
     required IconData icon,
+    required Color sectionColor,
     required List<Widget> children,
   }) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -314,16 +436,12 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
+                Icon(icon, size: 18, color: sectionColor),
+                const SizedBox(width: 10),
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -338,38 +456,225 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildSwitchTile(
     BuildContext context, {
+    required IconData icon,
     required String title,
     required String subtitle,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool?> onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SwitchListTile(
-      title: Text(title),
+      secondary: Icon(
+        icon,
+        size: 20,
+        color: value ? colorScheme.primary : colorScheme.onSurfaceVariant,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: value ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+        ),
+      ),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
       value: value,
       onChanged: onChanged,
     );
   }
 
-  Widget _buildDropdownTile<T>(
+  Widget _buildSelectorTile<T>(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required T currentValue,
+    required List<_SelectorOption<T>> options,
+    required ValueChanged<T> onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final currentLabel = options
+        .firstWhere((o) => o.value == currentValue, orElse: () => options.first)
+        .label;
+
+    return ListTile(
+      leading: Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
+      title: Text(title),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              currentLabel,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right, size: 20, color: colorScheme.outline),
+        ],
+      ),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _showSelectorBottomSheet<T>(
+          context,
+          title: title,
+          currentValue: currentValue,
+          options: options,
+          onChanged: onChanged,
+        );
+      },
+    );
+  }
+
+  void _showSelectorBottomSheet<T>(
     BuildContext context, {
     required String title,
-    required T value,
-    required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged,
+    required T currentValue,
+    required List<_SelectorOption<T>> options,
+    required ValueChanged<T> onChanged,
   }) {
-    return ListTile(
-      title: Text(title),
-      trailing: DropdownButton<T>(
-        value: value,
-        items: items,
-        onChanged: onChanged,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final option = options[index];
+                  final isSelected = option.value == currentValue;
+
+                  return InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      onChanged(option.value);
+                      Navigator.pop(context);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? colorScheme.primary
+                                    : colorScheme.outline,
+                                width: 2,
+                              ),
+                            ),
+                            child: isSelected
+                                ? Center(
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: colorScheme.primary,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  option.label,
+                                  style: TextStyle(
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  option.description,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _SelectorOption<T> {
+  final T value;
+  final String label;
+  final String description;
+
+  const _SelectorOption({
+    required this.value,
+    required this.label,
+    required this.description,
+  });
 }

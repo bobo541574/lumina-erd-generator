@@ -4,14 +4,9 @@ import '../../../schema_parser/domain/models/project_schema.dart';
 import '../../domain/services/project_parser.dart';
 import '../../../../core/errors/app_exceptions.dart';
 import '../../../../core/services/parse_cache.dart';
+import '../../../../core/providers/config_provider.dart';
 
-enum ProjectLoadState {
-  idle,
-  selected,
-  validating,
-  parsed,
-  error,
-}
+enum ProjectLoadState { idle, selected, validating, parsed, error }
 
 class ProjectState {
   final String? directoryPath;
@@ -53,10 +48,10 @@ class ProjectState {
 }
 
 class ProjectNotifier extends StateNotifier<ProjectState> {
-  ProjectNotifier() : super(const ProjectState());
+  final Ref _ref;
+  ProjectNotifier(this._ref) : super(const ProjectState());
 
   final _cache = ParseCache();
-  static const _enableModelParsing = true;
 
   Future<void> pickDirectory() async {
     final result = await FilePicker.platform.getDirectoryPath(
@@ -125,7 +120,11 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
   }
 
   Future<ProjectParserResult> _runParsing(String path) async {
-    return ProjectParser.parse(path, enableModelParsing: _enableModelParsing);
+    final config = _ref.read(configProvider);
+    return ProjectParser.parse(
+      path,
+      enableModelParsing: config.enableModelParsing,
+    );
   }
 
   void clearProject() {
@@ -134,7 +133,7 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
 }
 
 final projectProvider = StateNotifierProvider<ProjectNotifier, ProjectState>(
-  (ref) => ProjectNotifier(),
+  (ref) => ProjectNotifier(ref),
 );
 
 final projectSchemaProvider = Provider<ProjectSchema?>((ref) {
@@ -144,3 +143,25 @@ final projectSchemaProvider = Provider<ProjectSchema?>((ref) {
 final recentProjectsProvider = StateProvider<List<String>>((ref) => []);
 
 final enableModelParsingProvider = StateProvider<bool>((ref) => true);
+
+final filteredSchemaProvider = Provider<ProjectSchema?>((ref) {
+  final schema = ref.watch(projectSchemaProvider);
+  final config = ref.watch(configProvider);
+  if (schema == null) return null;
+  if (config.includeSoftDeletes) return schema;
+
+  final filteredTables = schema.tables.where((t) => !t.hasSoftDeletes).toList();
+  final filteredNames = filteredTables.map((t) => t.name).toSet();
+
+  return ProjectSchema(
+    projectName: schema.projectName,
+    tables: filteredTables,
+    relationships: schema.relationships
+        .where(
+          (r) =>
+              filteredNames.contains(r.sourceTable) &&
+              filteredNames.contains(r.targetTable),
+        )
+        .toList(),
+  );
+});

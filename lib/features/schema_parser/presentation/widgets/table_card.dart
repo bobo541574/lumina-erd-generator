@@ -53,8 +53,9 @@ class TableCard extends ConsumerWidget {
     return InkWell(
       onTap: () {
         final current = ref.read(expandedTableProvider);
-        ref.read(expandedTableProvider.notifier).state =
-            current == table.id ? null : table.id;
+        ref.read(expandedTableProvider.notifier).state = current == table.id
+            ? null
+            : table.id;
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -73,7 +74,8 @@ class TableCard extends ConsumerWidget {
                     children: [
                       Text(
                         table.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                               fontFamily: 'monospace',
                             ),
@@ -113,11 +115,7 @@ class TableCard extends ConsumerWidget {
         color: colorScheme.primaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        Icons.table_chart,
-        color: colorScheme.primary,
-        size: 20,
-      ),
+      child: Icon(Icons.table_chart, color: colorScheme.primary, size: 20),
     );
   }
 
@@ -139,10 +137,10 @@ class TableCard extends ConsumerWidget {
           child: Text(
             c,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 10,
-                ),
+              color: color,
+              fontWeight: FontWeight.w500,
+              fontSize: 10,
+            ),
           ),
         );
       }).toList(),
@@ -199,9 +197,9 @@ class TableCard extends ConsumerWidget {
           Text(
             count,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -218,10 +216,10 @@ class TableCard extends ConsumerWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-            ),
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+        ),
       ),
     );
   }
@@ -229,9 +227,7 @@ class TableCard extends ConsumerWidget {
   Widget _buildExpandedContent(BuildContext context, ColorScheme colorScheme) {
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: colorScheme.outlineVariant),
-        ),
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -262,9 +258,9 @@ class TableCard extends ConsumerWidget {
               const SizedBox(width: 6),
               Text(
                 'Columns (${table.columns.length})',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -277,10 +273,7 @@ class TableCard extends ConsumerWidget {
             child: Column(
               children: [
                 for (var i = 0; i < table.columns.length; i++) ...[
-                  ColumnRow(
-                    column: table.columns[i],
-                    isEven: i.isEven,
-                  ),
+                  ColumnRow(column: table.columns[i], isEven: i.isEven),
                   if (i < table.columns.length - 1)
                     Divider(
                       height: 1,
@@ -306,13 +299,13 @@ class TableCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.link, size: 16, color: Colors.purple),
+              const Icon(Icons.link, size: 16, color: Colors.purple),
               const SizedBox(width: 6),
               Text(
                 'Relationships (${relationships.length})',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -340,13 +333,13 @@ class TableCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.key, size: 16, color: Colors.teal),
+              const Icon(Icons.key, size: 16, color: Colors.teal),
               const SizedBox(width: 6),
               Text(
                 'Indexes (${table.indexes.length})',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -364,20 +357,25 @@ class TableCard extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(
                     index.name,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '(${index.columns.join(', ')})',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   if (index.unique) ...[
                     const SizedBox(width: 4),
-                    _buildMiniBadge(context, 'UNIQUE', Icons.check, Colors.orange),
+                    _buildMiniBadge(
+                      context,
+                      'UNIQUE',
+                      Icons.check,
+                      Colors.orange,
+                    ),
                   ],
                 ],
               ),

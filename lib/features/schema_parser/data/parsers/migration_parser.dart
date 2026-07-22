@@ -13,13 +13,9 @@ class MigrationParser {
 
   static RegExp _re(String pattern) => RegExp(pattern, multiLine: true);
 
-  static final _schemaCreateRegex = _re(
-    "Schema::create\\(\\s*" + _q("(\\w+)"),
-  );
+  static final _schemaCreateRegex = _re('Schema::create\\(\\s*' + _q('(\\w+)'));
 
-  static final _schemaTableRegex = _re(
-    "Schema::table\\(\\s*" + _q("(\\w+)"),
-  );
+  static final _schemaTableRegex = _re('Schema::table\\(\\s*' + _q('(\\w+)'));
 
   static final _idColumnRegex = _re(r'\$table->id\(\)');
 
@@ -45,15 +41,17 @@ class MigrationParser {
   static final _unsignedRegex = RegExp(r'->unsigned\(');
 
   static final _defaultRegex = _re(
-    r"->default\(\s*" + _q('?(.+?)') + r'?\s*\)',
+    r'->default\(\s*' + _q('?(.+?)') + r'?\s*\)',
   );
 
-  static final _commentRegex = _re(
-    r"->comment\(\s*" + _q('(.+?)') + r'\s*\)',
-  );
+  static final _commentRegex = _re(r'->comment\(\s*' + _q('(.+?)') + r'\s*\)');
 
   static final _foreignIdConstrainedRegex = _re(
-    r'\$table->foreignId\(\s*' + _q(r'(\w+)') + r"""\s*\)->constrained\(""" + _optQ(r'(\w*)') + r"""\s*\)""",
+    r'\$table->foreignId\(\s*' +
+        _q(r'(\w+)') +
+        r'''\s*\)->constrained\(''' +
+        _optQ(r'(\w*)') +
+        r'''\s*\)''',
   );
 
   static final _foreignIdRegex = _re(
@@ -68,9 +66,7 @@ class MigrationParser {
     r'->references\(\s*' + _q(r'(\w+)') + r'\s*\)',
   );
 
-  static final _onRegex = _re(
-    r'->on\(\s*' + _q(r'(\w+)') + r'\s*\)',
-  );
+  static final _onRegex = _re(r'->on\(\s*' + _q(r'(\w+)') + r'\s*\)');
 
   static final _timestampsRegex = _re(r'\$table->timestamps\(\)');
   static final _softDeletesRegex = _re(r'\$table->softDeletes\(');
@@ -104,12 +100,13 @@ class MigrationParser {
       );
     }
 
-    final phpFiles = migrationsDir
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.php'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final phpFiles =
+        migrationsDir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.php'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
 
     final tableColumns = <String, List<ColumnSchema>>{};
     final tableIndexes = <String, List<IndexSchema>>{};
@@ -120,7 +117,11 @@ class MigrationParser {
       try {
         final content = file.readAsStringSync();
         _parseMigrationFile(
-          content, tableColumns, tableIndexes, relationships, alterStatements,
+          content,
+          tableColumns,
+          tableIndexes,
+          relationships,
+          alterStatements,
         );
       } catch (e) {
         // Skip malformed files silently
@@ -136,16 +137,29 @@ class MigrationParser {
       if (cols.isEmpty) continue;
 
       final hasId = cols.any((c) => c.name == 'id');
-      if (!hasId && !cols.any((c) => c.primary) && !entry.key.contains('pivot')) {
-        cols.insert(0, const ColumnSchema(
-          name: 'id', type: 'bigIncrements', primary: true, autoIncrement: true,
-        ));
+      if (!hasId &&
+          !cols.any((c) => c.primary) &&
+          !entry.key.contains('pivot')) {
+        cols.insert(
+          0,
+          const ColumnSchema(
+            name: 'id',
+            type: 'bigIncrements',
+            primary: true,
+            autoIncrement: true,
+          ),
+        );
       }
 
-      tables.add(TableSchema(
-        id: _uuid.v4(), name: entry.key, columns: cols, indexes: idxs,
-        isPivot: _isPivotTable(entry.key, cols),
-      ));
+      tables.add(
+        TableSchema(
+          id: _uuid.v4(),
+          name: entry.key,
+          columns: cols,
+          indexes: idxs,
+          isPivot: _isPivotTable(entry.key, cols),
+        ),
+      );
     }
 
     return ProjectSchema(
@@ -177,30 +191,52 @@ class MigrationParser {
   }
 
   static List<ColumnSchema> _parseColumnDefinitions(
-    String content, List<RelationshipSchema> relationships,
+    String content,
+    List<RelationshipSchema> relationships,
   ) {
     final columns = <ColumnSchema>[];
 
     if (_idColumnRegex.hasMatch(content)) {
-      columns.add(const ColumnSchema(
-        name: 'id', type: 'bigIncrements', primary: true, autoIncrement: true,
-      ));
+      columns.add(
+        const ColumnSchema(
+          name: 'id',
+          type: 'bigIncrements',
+          primary: true,
+          autoIncrement: true,
+        ),
+      );
     }
 
     for (final m in _bigIncrementsRegex.allMatches(content)) {
-      columns.add(ColumnSchema(
-        name: m.group(1)!, type: 'bigIncrements', primary: true, autoIncrement: true,
-      ));
+      columns.add(
+        ColumnSchema(
+          name: m.group(1)!,
+          type: 'bigIncrements',
+          primary: true,
+          autoIncrement: true,
+        ),
+      );
     }
 
     for (final m in _incrementsRegex.allMatches(content)) {
-      columns.add(ColumnSchema(
-        name: m.group(1)!, type: 'increments', primary: true, autoIncrement: true,
-      ));
+      columns.add(
+        ColumnSchema(
+          name: m.group(1)!,
+          type: 'increments',
+          primary: true,
+          autoIncrement: true,
+        ),
+      );
     }
 
     for (final m in _uuidColumnRegex.allMatches(content)) {
-      columns.add(ColumnSchema(name: m.group(1)!, type: 'uuid', primary: m.group(1) == 'id'));
+      columns.add(
+        ColumnSchema(
+          name: m.group(1)!,
+          type: 'uuid',
+          primary: m.group(1) == 'id',
+        ),
+      );
     }
 
     for (final m in _columnRegex.allMatches(content)) {
@@ -210,18 +246,20 @@ class MigrationParser {
       final lengthStr = m.group(3);
       final line = content.substring(m.start, _findLineEnd(content, m.end));
 
-      columns.add(ColumnSchema(
-        name: name,
-        type: _mapColumnType(type),
-        nullable: _nullableRegex.hasMatch(line),
-        unique: _uniqueRegex.hasMatch(line),
-        primary: _primaryRegex.hasMatch(line),
-        defaultValue: _defaultRegex.firstMatch(line)?.group(1),
-        length: lengthStr != null ? int.tryParse(lengthStr) : null,
-        unsigned: _unsignedRegex.hasMatch(line),
-        autoIncrement: line.contains('autoIncrement()'),
-        comment: _commentRegex.firstMatch(line)?.group(1),
-      ));
+      columns.add(
+        ColumnSchema(
+          name: name,
+          type: _mapColumnType(type),
+          nullable: _nullableRegex.hasMatch(line),
+          unique: _uniqueRegex.hasMatch(line),
+          primary: _primaryRegex.hasMatch(line),
+          defaultValue: _defaultRegex.firstMatch(line)?.group(1),
+          length: lengthStr != null ? int.tryParse(lengthStr) : null,
+          unsigned: _unsignedRegex.hasMatch(line),
+          autoIncrement: line.contains('autoIncrement()'),
+          comment: _commentRegex.firstMatch(line)?.group(1),
+        ),
+      );
     }
 
     for (final m in _booleanRegex.allMatches(content)) {
@@ -234,17 +272,37 @@ class MigrationParser {
     for (final m in _unsignedBigIntegerRegex.allMatches(content)) {
       final name = m.group(1)!;
       if (!columns.any((c) => c.name == name)) {
-        columns.add(ColumnSchema(name: name, type: 'bigInteger', unsigned: true));
+        columns.add(
+          ColumnSchema(name: name, type: 'bigInteger', unsigned: true),
+        );
       }
     }
 
     if (_timestampsRegex.hasMatch(content)) {
-      columns.add(const ColumnSchema(name: 'created_at', type: 'timestamp', nullable: true));
-      columns.add(const ColumnSchema(name: 'updated_at', type: 'timestamp', nullable: true));
+      columns.add(
+        const ColumnSchema(
+          name: 'created_at',
+          type: 'timestamp',
+          nullable: true,
+        ),
+      );
+      columns.add(
+        const ColumnSchema(
+          name: 'updated_at',
+          type: 'timestamp',
+          nullable: true,
+        ),
+      );
     }
 
     if (_softDeletesRegex.hasMatch(content)) {
-      columns.add(const ColumnSchema(name: 'deleted_at', type: 'timestamp', nullable: true));
+      columns.add(
+        const ColumnSchema(
+          name: 'deleted_at',
+          type: 'timestamp',
+          nullable: true,
+        ),
+      );
     }
 
     for (final m in _morphsRegex.allMatches(content)) {
@@ -255,28 +313,42 @@ class MigrationParser {
         columns.add(ColumnSchema(name: typeCol, type: 'string'));
       }
       if (!columns.any((c) => c.name == idCol)) {
-        columns.add(ColumnSchema(name: idCol, type: 'bigInteger', unsigned: true));
+        columns.add(
+          ColumnSchema(name: idCol, type: 'bigInteger', unsigned: true),
+        );
       }
     }
 
     for (final m in _foreignIdConstrainedRegex.allMatches(content)) {
       final colName = m.group(1)!;
-      final targetTable = m.group(2)!.isNotEmpty ? m.group(2)! : colName.replaceAll('_id', '');
+      final targetTable = m.group(2)!.isNotEmpty
+          ? m.group(2)!
+          : colName.replaceAll('_id', '');
       if (!columns.any((c) => c.name == colName)) {
-        columns.add(ColumnSchema(name: colName, type: 'bigInteger', unsigned: true));
+        columns.add(
+          ColumnSchema(name: colName, type: 'bigInteger', unsigned: true),
+        );
       }
-      relationships.add(RelationshipSchema(
-        type: RelationshipType.belongsTo, sourceTable: '', targetTable: targetTable,
-        foreignKey: colName, localKey: 'id',
-      ));
+      relationships.add(
+        RelationshipSchema(
+          type: RelationshipType.belongsTo,
+          sourceTable: '',
+          targetTable: targetTable,
+          foreignKey: colName,
+          localKey: 'id',
+        ),
+      );
     }
 
     for (final m in _foreignIdRegex.allMatches(content)) {
       final colName = m.group(1)!;
       final line = content.substring(m.start, _findLineEnd(content, m.end));
-      if (line.contains('->constrained()') || line.contains('->constrained(')) continue;
+      if (line.contains('->constrained()') || line.contains('->constrained('))
+        continue;
       if (!columns.any((c) => c.name == colName)) {
-        columns.add(ColumnSchema(name: colName, type: 'bigInteger', unsigned: true));
+        columns.add(
+          ColumnSchema(name: colName, type: 'bigInteger', unsigned: true),
+        );
       }
     }
 
@@ -286,10 +358,15 @@ class MigrationParser {
       final refMatch = _referencesRegex.firstMatch(line);
       final onMatch = _onRegex.firstMatch(line);
       if (refMatch != null && onMatch != null) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.belongsTo, sourceTable: '',
-          targetTable: onMatch.group(1)!, foreignKey: fkCol, localKey: refMatch.group(1)!,
-        ));
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.belongsTo,
+            sourceTable: '',
+            targetTable: onMatch.group(1)!,
+            foreignKey: fkCol,
+            localKey: refMatch.group(1)!,
+          ),
+        );
       }
     }
 
@@ -298,20 +375,41 @@ class MigrationParser {
 
   static int _findLineEnd(String content, int start) {
     var end = start;
-    while (end < content.length && content[end] != ';' && content[end] != '\n') end++;
+    while (end < content.length && content[end] != ';' && content[end] != '\n')
+      end++;
     return end;
   }
 
   static String _mapColumnType(String type) {
     const map = {
-      'id': 'bigIncrements', 'bigincrements': 'bigIncrements', 'increments': 'increments',
-      'string': 'string', 'varchar': 'string', 'text': 'text', 'longtext': 'longText',
-      'mediumtext': 'mediumText', 'integer': 'integer', 'int': 'integer',
-      'biginteger': 'bigInteger', 'bigint': 'bigInteger', 'smallinteger': 'smallInteger',
-      'smallint': 'smallInteger', 'tinyinteger': 'tinyInteger', 'tinyint': 'tinyInteger',
-      'boolean': 'boolean', 'date': 'date', 'datetime': 'datetime', 'timestamp': 'timestamp',
-      'json': 'json', 'enum': 'enum', 'float': 'float', 'double': 'double',
-      'decimal': 'decimal', 'binary': 'binary', 'uuid': 'uuid', 'char': 'char',
+      'id': 'bigIncrements',
+      'bigincrements': 'bigIncrements',
+      'increments': 'increments',
+      'string': 'string',
+      'varchar': 'string',
+      'text': 'text',
+      'longtext': 'longText',
+      'mediumtext': 'mediumText',
+      'integer': 'integer',
+      'int': 'integer',
+      'biginteger': 'bigInteger',
+      'bigint': 'bigInteger',
+      'smallinteger': 'smallInteger',
+      'smallint': 'smallInteger',
+      'tinyinteger': 'tinyInteger',
+      'tinyint': 'tinyInteger',
+      'boolean': 'boolean',
+      'date': 'date',
+      'datetime': 'datetime',
+      'timestamp': 'timestamp',
+      'json': 'json',
+      'enum': 'enum',
+      'float': 'float',
+      'double': 'double',
+      'decimal': 'decimal',
+      'binary': 'binary',
+      'uuid': 'uuid',
+      'char': 'char',
     };
     return map[type.toLowerCase()] ?? type;
   }
@@ -319,14 +417,32 @@ class MigrationParser {
   static List<IndexSchema> _parseIndexes(String content) {
     final indexes = <IndexSchema>[];
     for (final m in _indexRegex.allMatches(content)) {
-      final cols = m.group(1)!.replaceAll("'", '').replaceAll('"', '')
-          .split(',').map((s) => s.trim()).toList();
-      indexes.add(IndexSchema(name: m.group(2) ?? 'idx_${cols.join("_")}', columns: cols));
+      final cols = m
+          .group(1)!
+          .replaceAll("'", '')
+          .replaceAll('"', '')
+          .split(',')
+          .map((s) => s.trim())
+          .toList();
+      indexes.add(
+        IndexSchema(name: m.group(2) ?? 'idx_${cols.join("_")}', columns: cols),
+      );
     }
     for (final m in _uniqueIndexRegex.allMatches(content)) {
-      final cols = m.group(1)!.replaceAll("'", '').replaceAll('"', '')
-          .split(',').map((s) => s.trim()).toList();
-      indexes.add(IndexSchema(name: m.group(2) ?? 'uniq_${cols.join("_")}', columns: cols, unique: true));
+      final cols = m
+          .group(1)!
+          .replaceAll("'", '')
+          .replaceAll('"', '')
+          .split(',')
+          .map((s) => s.trim())
+          .toList();
+      indexes.add(
+        IndexSchema(
+          name: m.group(2) ?? 'uniq_${cols.join("_")}',
+          columns: cols,
+          unique: true,
+        ),
+      );
     }
     return indexes;
   }
@@ -345,35 +461,54 @@ class MigrationParser {
           final refMatch = _referencesRegex.firstMatch(line);
           final onMatch = _onRegex.firstMatch(line);
           if (refMatch != null && onMatch != null) {
-            relationships.add(RelationshipSchema(
-              type: RelationshipType.belongsTo, sourceTable: tableName,
-              targetTable: onMatch.group(1)!, foreignKey: fkCol, localKey: refMatch.group(1)!,
-            ));
+            relationships.add(
+              RelationshipSchema(
+                type: RelationshipType.belongsTo,
+                sourceTable: tableName,
+                targetTable: onMatch.group(1)!,
+                foreignKey: fkCol,
+                localKey: refMatch.group(1)!,
+              ),
+            );
           }
         }
         for (final m in _foreignIdConstrainedRegex.allMatches(content)) {
           final colName = m.group(1)!;
-          final targetTable = m.group(2)!.isNotEmpty ? m.group(2)! : colName.replaceAll('_id', '');
+          final targetTable = m.group(2)!.isNotEmpty
+              ? m.group(2)!
+              : colName.replaceAll('_id', '');
           final existing = tableColumns[tableName];
           if (existing != null && !existing.any((c) => c.name == colName)) {
-            existing.add(ColumnSchema(name: colName, type: 'bigInteger', unsigned: true));
+            existing.add(
+              ColumnSchema(name: colName, type: 'bigInteger', unsigned: true),
+            );
           }
-          relationships.add(RelationshipSchema(
-            type: RelationshipType.belongsTo, sourceTable: tableName,
-            targetTable: targetTable, foreignKey: colName, localKey: 'id',
-          ));
+          relationships.add(
+            RelationshipSchema(
+              type: RelationshipType.belongsTo,
+              sourceTable: tableName,
+              targetTable: targetTable,
+              foreignKey: colName,
+              localKey: 'id',
+            ),
+          );
         }
       }
     }
   }
 
   static bool _isPivotTable(String tableName, List<ColumnSchema> columns) {
-    final looksLikePivot = tableName.contains('_') &&
+    final looksLikePivot =
+        tableName.contains('_') &&
         tableName.split('_').length == 2 &&
         columns.length <= 5 &&
         columns.any((c) => c.name.endsWith('_id'));
     final hasOnlyFksAndTimestamps = columns.every(
-      (c) => c.name.endsWith('_id') || c.name == 'created_at' || c.name == 'updated_at' || c.name == 'id',
+      (c) =>
+          c.name.endsWith('_id') ||
+          c.name == 'created_at' ||
+          c.name == 'updated_at' ||
+          c.name == 'id',
     );
     return looksLikePivot || hasOnlyFksAndTimestamps;
   }
@@ -402,13 +537,23 @@ class MigrationParser {
           final targetName = col.name.replaceAll('_id', '');
           final targetTable = _findMatchingTable(targetName, tableNames);
           if (targetTable != null && targetTable != table.name) {
-            final alreadyHas = resolved.any((r) =>
-                r.sourceTable == table.name && r.targetTable == targetTable && r.foreignKey == col.name);
+            final alreadyHas = resolved.any(
+              (r) =>
+                  r.sourceTable == table.name &&
+                  r.targetTable == targetTable &&
+                  r.foreignKey == col.name,
+            );
             if (!alreadyHas) {
-              resolved.add(RelationshipSchema(
-                type: RelationshipType.belongsTo, sourceTable: table.name,
-                targetTable: targetTable, foreignKey: col.name, localKey: 'id', isInferred: true,
-              ));
+              resolved.add(
+                RelationshipSchema(
+                  type: RelationshipType.belongsTo,
+                  sourceTable: table.name,
+                  targetTable: targetTable,
+                  foreignKey: col.name,
+                  localKey: 'id',
+                  isInferred: true,
+                ),
+              );
             }
           }
         }
@@ -417,21 +562,38 @@ class MigrationParser {
 
     final pivotTables = tables.where((t) => t.isPivot).toList();
     for (final pivot in pivotTables) {
-      final fkCols = pivot.columns.where((c) => c.name.endsWith('_id')).toList();
+      final fkCols = pivot.columns
+          .where((c) => c.name.endsWith('_id'))
+          .toList();
       if (fkCols.length >= 2) {
         for (var i = 0; i < fkCols.length; i++) {
           for (var j = i + 1; j < fkCols.length; j++) {
-            final t1 = _findMatchingTable(fkCols[i].name.replaceAll('_id', ''), tableNames);
-            final t2 = _findMatchingTable(fkCols[j].name.replaceAll('_id', ''), tableNames);
+            final t1 = _findMatchingTable(
+              fkCols[i].name.replaceAll('_id', ''),
+              tableNames,
+            );
+            final t2 = _findMatchingTable(
+              fkCols[j].name.replaceAll('_id', ''),
+              tableNames,
+            );
             if (t1 != null && t2 != null) {
-              final exists = resolved.any((r) =>
-                  r.type == RelationshipType.belongsToMany &&
-                  ((r.sourceTable == t1 && r.targetTable == t2) || (r.sourceTable == t2 && r.targetTable == t1)));
+              final exists = resolved.any(
+                (r) =>
+                    r.type == RelationshipType.belongsToMany &&
+                    ((r.sourceTable == t1 && r.targetTable == t2) ||
+                        (r.sourceTable == t2 && r.targetTable == t1)),
+              );
               if (!exists) {
-                resolved.add(RelationshipSchema(
-                  type: RelationshipType.belongsToMany, sourceTable: t1, targetTable: t2,
-                  pivotTable: pivot.name, foreignKey: fkCols[0].name, localKey: 'id',
-                ));
+                resolved.add(
+                  RelationshipSchema(
+                    type: RelationshipType.belongsToMany,
+                    sourceTable: t1,
+                    targetTable: t2,
+                    pivotTable: pivot.name,
+                    foreignKey: fkCols[0].name,
+                    localKey: 'id',
+                  ),
+                );
               }
             }
           }
@@ -443,7 +605,9 @@ class MigrationParser {
   }
 
   static String? _inferSourceTable(
-    RelationshipSchema rel, Map<String, List<ColumnSchema>> tableColumns, Set<String> tableNames,
+    RelationshipSchema rel,
+    Map<String, List<ColumnSchema>> tableColumns,
+    Set<String> tableNames,
   ) {
     for (final entry in tableColumns.entries) {
       if (entry.value.any((c) => c.name == rel.foreignKey)) return entry.key;

@@ -10,39 +10,57 @@ class ModelParser {
   static final _classRegex = _re(r'class\s+(\w+)\s+extends\s+Model');
 
   static final _tablePropertyRegex = _re(
-    r"protected\s+\??string\s+\\\$table\s*=\s*" + _q(r'(\w+)'),
+    r'protected\s+\??string\s+\$table\s*=\s*' + _q(r'(\w+)'),
   );
 
   static final _belongsToWithParamsRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->belongsTo\(\s*(\w+)::class\s*,\s*' + _q(r'(\w+)') + r'(?:\s*,\s*' + _q(r'(\w+)') + r')?\s*\)',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->belongsTo\(\s*(\w+)::class\s*,\s*' +
+        _q(r'(\w+)') +
+        r'(?:\s*,\s*' +
+        _q(r'(\w+)') +
+        r')?\s*\)',
   );
 
   static final _belongsToRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->belongsTo\(\s*(\w+)::class',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->belongsTo\(\s*(\w+)::class',
   );
 
   static final _hasManyWithParamsRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->hasMany\(\s*(\w+)::class\s*,\s*' + _q(r'(\w+)') + r'(?:\s*,\s*' + _q(r'(\w+)') + r')?\s*\)',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->hasMany\(\s*(\w+)::class\s*,\s*' +
+        _q(r'(\w+)') +
+        r'(?:\s*,\s*' +
+        _q(r'(\w+)') +
+        r')?\s*\)',
   );
 
   static final _hasManyRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->hasMany\(\s*(\w+)::class',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->hasMany\(\s*(\w+)::class',
   );
 
   static final _hasOneWithParamsRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->hasOne\(\s*(\w+)::class\s*,\s*' + _q(r'(\w+)') + r'(?:\s*,\s*' + _q(r'(\w+)') + r')?\s*\)',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->hasOne\(\s*(\w+)::class\s*,\s*' +
+        _q(r'(\w+)') +
+        r'(?:\s*,\s*' +
+        _q(r'(\w+)') +
+        r')?\s*\)',
   );
 
   static final _hasOneRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->hasOne\(\s*(\w+)::class',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->hasOne\(\s*(\w+)::class',
   );
 
   static final _belongsToManyWithParamsRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->belongsToMany\(\s*(\w+)::class\s*(?:,\s*' + _q(r'(\w+)') + r'(?:\s*,\s*' + _q(r'(\w+)') + r'(?:\s*,\s*' + _q(r'(\w+)') + r')?)?)?\s*\)',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->belongsToMany\(\s*(\w+)::class\s*(?:,\s*' +
+        _q(r'(\w+)') +
+        r'(?:\s*,\s*' +
+        _q(r'(\w+)') +
+        r'(?:\s*,\s*' +
+        _q(r'(\w+)') +
+        r')?)?)?\s*\)',
   );
 
   static final _belongsToManyRegex = _re(
-    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*return\s+\\\$this->belongsToMany\(\s*(\w+)::class',
+    r'public\s+function\s+(\w+)\s*\(\s*\)\s*\{[^}]*?return\s+\$this->belongsToMany\(\s*(\w+)::class',
   );
 
   static List<RelationshipSchema> parse(
@@ -100,19 +118,53 @@ class ModelParser {
     final tableMatch = _tablePropertyRegex.firstMatch(content);
     if (tableMatch != null) customTable = tableMatch.group(1);
 
-    final sourceTable = customTable ?? modelToTableMap[modelName] ?? _modelToTableName(modelName);
+    final sourceTable =
+        customTable ??
+        modelToTableMap[modelName] ??
+        _modelToTableName(modelName);
 
-    _parseBelongsTo(content, sourceTable, modelName, tableNames, modelToTableMap, relationships);
-    _parseHasMany(content, sourceTable, modelName, tableNames, modelToTableMap, relationships);
-    _parseHasOne(content, sourceTable, modelName, tableNames, modelToTableMap, relationships);
-    _parseBelongsToMany(content, sourceTable, modelName, tableNames, modelToTableMap, relationships);
+    _parseBelongsTo(
+      content,
+      sourceTable,
+      modelName,
+      tableNames,
+      modelToTableMap,
+      relationships,
+    );
+    _parseHasMany(
+      content,
+      sourceTable,
+      modelName,
+      tableNames,
+      modelToTableMap,
+      relationships,
+    );
+    _parseHasOne(
+      content,
+      sourceTable,
+      modelName,
+      tableNames,
+      modelToTableMap,
+      relationships,
+    );
+    _parseBelongsToMany(
+      content,
+      sourceTable,
+      modelName,
+      tableNames,
+      modelToTableMap,
+      relationships,
+    );
 
     return relationships;
   }
 
   static void _parseBelongsTo(
-    String content, String sourceTable, String modelName,
-    Set<String> tableNames, Map<String, String> modelToTableMap,
+    String content,
+    String sourceTable,
+    String modelName,
+    Set<String> tableNames,
+    Map<String, String> modelToTableMap,
     List<RelationshipSchema> relationships,
   ) {
     final withParams = <String>{};
@@ -121,15 +173,23 @@ class ModelParser {
       final relatedModel = m.group(2)!;
       final foreignKey = m.group(3);
       final localKey = m.group(4);
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
 
       withParams.add(methodName);
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.belongsTo, sourceTable: sourceTable,
-          targetTable: targetTable, foreignKey: foreignKey ?? '${methodName}_id',
-          localKey: localKey ?? 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.belongsTo,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            foreignKey: foreignKey ?? '${methodName}_id',
+            localKey: localKey ?? 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
 
@@ -137,21 +197,32 @@ class ModelParser {
       final methodName = m.group(1)!;
       if (withParams.contains(methodName)) continue;
       final relatedModel = m.group(2)!;
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
 
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.belongsTo, sourceTable: sourceTable,
-          targetTable: targetTable, foreignKey: '${methodName}_id',
-          localKey: 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.belongsTo,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            foreignKey: '${methodName}_id',
+            localKey: 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
   }
 
   static void _parseHasMany(
-    String content, String sourceTable, String modelName,
-    Set<String> tableNames, Map<String, String> modelToTableMap,
+    String content,
+    String sourceTable,
+    String modelName,
+    Set<String> tableNames,
+    Map<String, String> modelToTableMap,
     List<RelationshipSchema> relationships,
   ) {
     final withParams = <String>{};
@@ -160,15 +231,23 @@ class ModelParser {
       final relatedModel = m.group(2)!;
       final foreignKey = m.group(3);
       final localKey = m.group(4);
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
 
       withParams.add(methodName);
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.hasMany, sourceTable: sourceTable,
-          targetTable: targetTable, foreignKey: foreignKey ?? _inferHasForeignKey(modelName),
-          localKey: localKey ?? 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.hasMany,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            foreignKey: foreignKey ?? _inferHasForeignKey(modelName),
+            localKey: localKey ?? 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
 
@@ -176,21 +255,32 @@ class ModelParser {
       final methodName = m.group(1)!;
       if (withParams.contains(methodName)) continue;
       final relatedModel = m.group(2)!;
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
 
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.hasMany, sourceTable: sourceTable,
-          targetTable: targetTable, foreignKey: _inferHasForeignKey(modelName),
-          localKey: 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.hasMany,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            foreignKey: _inferHasForeignKey(modelName),
+            localKey: 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
   }
 
   static void _parseHasOne(
-    String content, String sourceTable, String modelName,
-    Set<String> tableNames, Map<String, String> modelToTableMap,
+    String content,
+    String sourceTable,
+    String modelName,
+    Set<String> tableNames,
+    Map<String, String> modelToTableMap,
     List<RelationshipSchema> relationships,
   ) {
     final withParams = <String>{};
@@ -199,15 +289,23 @@ class ModelParser {
       final relatedModel = m.group(2)!;
       final foreignKey = m.group(3);
       final localKey = m.group(4);
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
 
       withParams.add(methodName);
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.hasOne, sourceTable: sourceTable,
-          targetTable: targetTable, foreignKey: foreignKey ?? _inferHasForeignKey(modelName),
-          localKey: localKey ?? 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.hasOne,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            foreignKey: foreignKey ?? _inferHasForeignKey(modelName),
+            localKey: localKey ?? 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
 
@@ -215,21 +313,32 @@ class ModelParser {
       final methodName = m.group(1)!;
       if (withParams.contains(methodName)) continue;
       final relatedModel = m.group(2)!;
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
 
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.hasOne, sourceTable: sourceTable,
-          targetTable: targetTable, foreignKey: _inferHasForeignKey(modelName),
-          localKey: 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.hasOne,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            foreignKey: _inferHasForeignKey(modelName),
+            localKey: 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
   }
 
   static void _parseBelongsToMany(
-    String content, String sourceTable, String modelName,
-    Set<String> tableNames, Map<String, String> modelToTableMap,
+    String content,
+    String sourceTable,
+    String modelName,
+    Set<String> tableNames,
+    Map<String, String> modelToTableMap,
     List<RelationshipSchema> relationships,
   ) {
     final withParams = <String>{};
@@ -239,17 +348,26 @@ class ModelParser {
       final pivotTable = m.group(3);
       final foreignKey = m.group(4);
       final relatedKey = m.group(5);
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
-      final inferredPivot = pivotTable ?? _inferPivotTable(sourceTable, targetTable);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final inferredPivot =
+          pivotTable ?? _inferPivotTable(sourceTable, targetTable);
 
       withParams.add(methodName);
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.belongsToMany, sourceTable: sourceTable,
-          targetTable: targetTable, pivotTable: inferredPivot,
-          foreignKey: foreignKey ?? _inferHasForeignKey(modelName),
-          localKey: relatedKey ?? 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.belongsToMany,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            pivotTable: inferredPivot,
+            foreignKey: foreignKey ?? _inferHasForeignKey(modelName),
+            localKey: relatedKey ?? 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
 
@@ -257,22 +375,32 @@ class ModelParser {
       final methodName = m.group(1)!;
       if (withParams.contains(methodName)) continue;
       final relatedModel = m.group(2)!;
-      final targetTable = modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
+      final targetTable =
+          modelToTableMap[relatedModel] ?? _modelToTableName(relatedModel);
       final inferredPivot = _inferPivotTable(sourceTable, targetTable);
 
-      if (tableNames.contains(sourceTable) && tableNames.contains(targetTable)) {
-        relationships.add(RelationshipSchema(
-          type: RelationshipType.belongsToMany, sourceTable: sourceTable,
-          targetTable: targetTable, pivotTable: inferredPivot,
-          foreignKey: _inferHasForeignKey(modelName),
-          localKey: 'id', isInferred: true, methodName: methodName,
-        ));
+      if (tableNames.contains(sourceTable) &&
+          tableNames.contains(targetTable)) {
+        relationships.add(
+          RelationshipSchema(
+            type: RelationshipType.belongsToMany,
+            sourceTable: sourceTable,
+            targetTable: targetTable,
+            pivotTable: inferredPivot,
+            foreignKey: _inferHasForeignKey(modelName),
+            localKey: 'id',
+            isInferred: true,
+            methodName: methodName,
+          ),
+        );
       }
     }
   }
 
   static String _modelToTableName(String modelName) {
-    final stripped = modelName.contains('\\') ? modelName.split('\\').last : modelName;
+    final stripped = modelName.contains('\\')
+        ? modelName.split('\\').last
+        : modelName;
     final snake = _camelToSnake(stripped);
     return _pluralize(snake);
   }
@@ -294,11 +422,16 @@ class ModelParser {
 
   static String _pluralize(String word) {
     if (word.isEmpty) return word;
-    if (word.endsWith('y') && word.length > 1 && !_isVowel(word[word.length - 2])) {
+    if (word.endsWith('y') &&
+        word.length > 1 &&
+        !_isVowel(word[word.length - 2])) {
       return '${word.substring(0, word.length - 1)}ies';
     }
-    if (word.endsWith('s') || word.endsWith('sh') || word.endsWith('ch') ||
-        word.endsWith('x') || word.endsWith('z')) {
+    if (word.endsWith('s') ||
+        word.endsWith('sh') ||
+        word.endsWith('ch') ||
+        word.endsWith('x') ||
+        word.endsWith('z')) {
       return '${word}es';
     }
     return '${word}s';
@@ -307,7 +440,9 @@ class ModelParser {
   static bool _isVowel(String char) => 'aeiou'.contains(char.toLowerCase());
 
   static String _inferHasForeignKey(String modelName) {
-    final stripped = modelName.contains('\\') ? modelName.split('\\').last : modelName;
+    final stripped = modelName.contains('\\')
+        ? modelName.split('\\').last
+        : modelName;
     return '${_camelToSnake(stripped)}_id';
   }
 

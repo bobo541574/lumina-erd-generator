@@ -1,23 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/table_schema.dart';
-import '../../domain/models/relationship_schema.dart';
-import '../../domain/models/column_schema.dart';
 import '../../../project_loader/presentation/providers/project_provider.dart';
 import '../widgets/table_card.dart';
+import '../../../../core/utils/debouncer.dart';
 
 enum SortMode { alphabetical, columnCount, relationshipCount }
 
+final _debouncedQueryProvider = StateProvider<String>((ref) => '');
 final searchQueryProvider = StateProvider<String>((ref) => '');
-final sortModeProvider = StateProvider<SortMode>((ref) => SortMode.alphabetical);
+final sortModeProvider = StateProvider<SortMode>(
+  (ref) => SortMode.alphabetical,
+);
 final showInferredOnlyProvider = StateProvider<bool>((ref) => false);
 final expandedTableProvider = StateProvider<String?>((ref) => null);
 
-class SchemaViewerScreen extends ConsumerWidget {
+class SchemaViewerScreen extends ConsumerStatefulWidget {
   const SchemaViewerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SchemaViewerScreen> createState() => _SchemaViewerScreenState();
+}
+
+class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
+  final _debouncer = Debouncer(delay: const Duration(milliseconds: 250));
+
+  @override
+  void dispose() {
+    _debouncer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final projectState = ref.watch(projectProvider);
 
     if (!projectState.isParsed) {
@@ -25,7 +40,7 @@ class SchemaViewerScreen extends ConsumerWidget {
     }
 
     final schema = projectState.schema!;
-    final query = ref.watch(searchQueryProvider);
+    final query = ref.watch(_debouncedQueryProvider);
     final sortMode = ref.watch(sortModeProvider);
 
     var tables = schema.tables;
@@ -79,28 +94,31 @@ class SchemaViewerScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.table_chart,
-            size: 80,
-            color: colorScheme.primary.withValues(alpha: 0.4),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No Schema Loaded',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Load a Laravel project first to view\ntable schemas and relationships.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-          ),
-        ],
+      child: Semantics(
+        label: 'No schema loaded',
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.table_chart,
+              size: 80,
+              color: colorScheme.primary.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Schema Loaded',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Load a Laravel project first to view\ntable schemas and relationships.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -118,9 +136,7 @@ class SchemaViewerScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outlineVariant),
-        ),
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,22 +144,30 @@ class SchemaViewerScreen extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search tables...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+                child: Semantics(
+                  label: 'Search tables',
+                  hint: 'Type to filter tables by name',
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search tables...',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    onChanged: (value) {
+                      _debouncer.run(() {
+                        ref.read(_debouncedQueryProvider.notifier).state =
+                            value;
+                      });
+                      ref.read(searchQueryProvider.notifier).state = value;
+                    },
                   ),
-                  onChanged: (value) {
-                    ref.read(searchQueryProvider.notifier).state = value;
-                  },
                 ),
               ),
               const SizedBox(width: 8),
@@ -267,26 +291,29 @@ class SchemaViewerScreen extends ConsumerWidget {
     String label,
     Color color,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-        ],
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -305,8 +332,8 @@ class SchemaViewerScreen extends ConsumerWidget {
           Text(
             'No tables matching "$query"',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -325,16 +352,14 @@ class SchemaViewerScreen extends ConsumerWidget {
       itemBuilder: (context, index) {
         final table = tables[index];
         final relationships = schema.relationships
-            .where((r) =>
-                r.sourceTable == table.name || r.targetTable == table.name)
+            .where(
+              (r) => r.sourceTable == table.name || r.targetTable == table.name,
+            )
             .toList();
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: TableCard(
-            table: table,
-            relationships: relationships,
-          ),
+          child: TableCard(table: table, relationships: relationships),
         );
       },
     );

@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../../schema_parser/domain/models/project_schema.dart';
 import '../../domain/services/project_parser.dart';
 import '../../../../core/errors/app_exceptions.dart';
+import '../../../../core/services/parse_cache.dart';
 
 enum ProjectLoadState {
   idle,
@@ -54,6 +55,7 @@ class ProjectState {
 class ProjectNotifier extends StateNotifier<ProjectState> {
   ProjectNotifier() : super(const ProjectState());
 
+  final _cache = ParseCache();
   static const _enableModelParsing = true;
 
   Future<void> pickDirectory() async {
@@ -93,7 +95,17 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
       final warnings = ProjectParser.validateLaravelProject(path);
       state = state.copyWith(validationWarnings: warnings);
 
+      final cached = _cache.get(path);
+      if (cached != null) {
+        state = state.copyWith(
+          loadState: ProjectLoadState.parsed,
+          parserResult: cached,
+        );
+        return;
+      }
+
       final result = await _runParsing(path);
+      _cache.put(path, result);
 
       state = state.copyWith(
         loadState: ProjectLoadState.parsed,
@@ -113,8 +125,6 @@ class ProjectNotifier extends StateNotifier<ProjectState> {
   }
 
   Future<ProjectParserResult> _runParsing(String path) async {
-    // Run parsing synchronously but in a way that doesn't block the UI
-    // For very large projects, this could be moved to an isolate
     return ProjectParser.parse(path, enableModelParsing: _enableModelParsing);
   }
 

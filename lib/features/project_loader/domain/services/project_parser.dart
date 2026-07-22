@@ -1,9 +1,7 @@
 import 'dart:io';
-import 'package:path/path.dart' as p;
 import '../../../schema_parser/data/parsers/migration_parser.dart';
 import '../../../schema_parser/data/parsers/model_parser.dart';
 import '../../../schema_parser/domain/models/project_schema.dart';
-import '../../../schema_parser/domain/models/table_schema.dart';
 import '../../../../core/errors/app_exceptions.dart';
 
 class ProjectParserResult {
@@ -39,20 +37,27 @@ class ProjectParser {
 
     if (!File('$path/artisan').existsSync()) {
       throw const InvalidLaravelProjectException(
-        suggestion: 'Ensure the selected directory is the root of a Laravel project (artisan file missing).',
+        suggestion:
+            'Ensure the selected directory is the root of a Laravel project (artisan file missing).',
       );
     }
 
     if (!Directory('$path/database/migrations').existsSync()) {
-      warnings.add('No database/migrations directory found. Only model-based relationships will be available.');
+      warnings.add(
+        'No database/migrations directory found. Only model-based relationships will be available.',
+      );
     }
 
     if (!Directory('$path/app/Models').existsSync()) {
-      warnings.add('No app/Models directory found. Model-based relationship inference will be unavailable.');
+      warnings.add(
+        'No app/Models directory found. Model-based relationship inference will be unavailable.',
+      );
     }
 
     if (!Directory('$path/vendor').existsSync()) {
-      warnings.add('vendor/ directory not found. The project may not have dependencies installed.');
+      warnings.add(
+        'vendor/ directory not found. The project may not have dependencies installed.',
+      );
     }
 
     return warnings;
@@ -78,10 +83,16 @@ class ProjectParser {
         .length;
   }
 
-  static ProjectParserResult parse(String projectPath, {bool enableModelParsing = true}) {
+  static ProjectParserResult parse(
+    String projectPath, {
+    bool enableModelParsing = true,
+  }) {
     final projectName = _extractProjectName(projectPath);
 
-    final migrationProject = MigrationParser.parse(projectPath, projectName: projectName);
+    final migrationProject = MigrationParser.parse(
+      projectPath,
+      projectName: projectName,
+    );
 
     var relationships = List.of(migrationProject.relationships);
     var usedModelInference = false;

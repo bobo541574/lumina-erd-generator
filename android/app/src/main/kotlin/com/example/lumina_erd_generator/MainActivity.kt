@@ -1,4 +1,4 @@
-package com.example.laravel_erd_generator
+package com.example.lumina_erd_generator
 
 import io.flutter.embedding.android.FlutterActivity
 

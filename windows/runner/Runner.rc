@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "laravel_erd_generator" "\0"
+            VALUE "FileDescription", "Lumina ERD Studio" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "laravel_erd_generator" "\0"
+            VALUE "InternalName", "Lumina ERD Studio" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "laravel_erd_generator.exe" "\0"
-            VALUE "ProductName", "laravel_erd_generator" "\0"
+            VALUE "OriginalFilename", "lumina_erd_generator.exe" "\0"
+            VALUE "ProductName", "Lumina ERD Studio" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

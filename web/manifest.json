@@ -1,6 +1,6 @@
 {
-    "name": "laravel_erd_generator",
-    "short_name": "laravel_erd_generator",
+    "name": "Lumina ERD Studio",
+    "short_name": "Lumina ERD Studio",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

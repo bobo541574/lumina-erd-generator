@@ -47,18 +47,16 @@ class PlantUmlExporter {
     return buffer.toString();
   }
 
-  static String _plantUmlNotation(dynamic type) {
-    switch (type.toString()) {
-      case 'RelationshipType.belongsTo':
+  static String _plantUmlNotation(RelationshipType type) {
+    switch (type) {
+      case RelationshipType.belongsTo:
         return '}|--||';
-      case 'RelationshipType.hasMany':
+      case RelationshipType.hasMany:
         return '||--{';
-      case 'RelationshipType.hasOne':
+      case RelationshipType.hasOne:
         return '||--||';
-      case 'RelationshipType.belongsToMany':
+      case RelationshipType.belongsToMany:
         return '}|--{';
-      default:
-        return '--';
     }
   }
 }

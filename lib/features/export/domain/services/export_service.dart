@@ -1,11 +1,10 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../schema_parser/domain/models/project_schema.dart';
-import '../exporters/mermaid_exporter.dart';
-import '../exporters/dbml_exporter.dart';
-import '../exporters/html_exporter.dart';
-import '../exporters/markdown_exporter.dart';
-import '../exporters/plantuml_exporter.dart';
-import '../exporters/graphviz_exporter.dart';
+import '../../data/exporters/mermaid_exporter.dart';
+import '../../data/exporters/dbml_exporter.dart';
+import '../../data/exporters/html_exporter.dart';
+import '../../data/exporters/markdown_exporter.dart';
+import '../../data/exporters/plantuml_exporter.dart';
+import '../../data/exporters/graphviz_exporter.dart';
 
 enum ExportFormat {
   mermaid,
@@ -100,8 +99,7 @@ class ExportService {
 
   static Map<ExportFormat, String> exportAll(ProjectSchema schema) {
     return {
-      for (final format in ExportFormat.values)
-        format: export(schema, format),
+      for (final format in ExportFormat.values) format: export(schema, format),
     };
   }
 

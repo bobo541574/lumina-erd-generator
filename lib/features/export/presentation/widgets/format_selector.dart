@@ -92,11 +92,11 @@ class FormatSelector extends StatelessWidget {
                   child: Text(
                     format.extension,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontFamily: 'monospace',
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
-                        ),
+                      fontFamily: 'monospace',
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -105,18 +105,18 @@ class FormatSelector extends StatelessWidget {
             Text(
               format.displayName,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurface,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: isSelected
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               _shortDescription(format),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

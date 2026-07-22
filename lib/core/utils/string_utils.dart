@@ -6,7 +6,10 @@ class StringUtils {
     final words = input.split(RegExp(r'[_\- ]+'));
     if (words.isEmpty) return input;
     return words[0].toLowerCase() +
-        words.skip(1).map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase()).join();
+        words
+            .skip(1)
+            .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+            .join();
   }
 
   static String snakeCase(String input) {
@@ -29,8 +32,11 @@ class StringUtils {
     if (word.endsWith('y') && !_isVowel(word[word.length - 2])) {
       return '${word.substring(0, word.length - 1)}ies';
     }
-    if (word.endsWith('s') || word.endsWith('sh') || word.endsWith('ch') ||
-        word.endsWith('x') || word.endsWith('z')) {
+    if (word.endsWith('s') ||
+        word.endsWith('sh') ||
+        word.endsWith('ch') ||
+        word.endsWith('x') ||
+        word.endsWith('z')) {
       return '${word}es';
     }
     return '${word}s';
@@ -41,8 +47,11 @@ class StringUtils {
     if (word.endsWith('ies')) {
       return '${word.substring(0, word.length - 3)}y';
     }
-    if (word.endsWith('ses') || word.endsWith('shes') || word.endsWith('ches') ||
-        word.endsWith('xes') || word.endsWith('zes')) {
+    if (word.endsWith('ses') ||
+        word.endsWith('shes') ||
+        word.endsWith('ches') ||
+        word.endsWith('xes') ||
+        word.endsWith('zes')) {
       return word.substring(0, word.length - 2);
     }
     if (word.endsWith('s') && !word.endsWith('ss')) {

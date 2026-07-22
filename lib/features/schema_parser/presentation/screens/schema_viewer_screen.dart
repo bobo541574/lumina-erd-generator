@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/models/project_schema.dart';
 import '../../domain/models/table_schema.dart';
 import '../../../project_loader/presentation/providers/project_provider.dart';
 import '../widgets/table_card.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/debouncer.dart';
 
 enum SortMode { alphabetical, columnCount, relationshipCount }
@@ -39,7 +42,11 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
       return _buildEmptyState(context);
     }
 
-    final schema = projectState.schema!;
+    final schema = ref.watch(filteredSchemaProvider);
+    if (schema == null) {
+      return _buildEmptyState(context);
+    }
+
     final query = ref.watch(_debouncedQueryProvider);
     final sortMode = ref.watch(sortModeProvider);
 
@@ -67,7 +74,7 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
 
   List<TableSchema> _sortTables(
     List<TableSchema> tables,
-    dynamic schema,
+    ProjectSchema schema,
     SortMode mode,
   ) {
     final sorted = List<TableSchema>.from(tables);
@@ -104,12 +111,12 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
               size: 80,
               color: colorScheme.primary.withValues(alpha: 0.4),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppConstants.spacingXl),
             Text(
               'No Schema Loaded',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppConstants.spacingSm),
             Text(
               'Load a Laravel project first to view\ntable schemas and relationships.',
               textAlign: TextAlign.center,
@@ -126,14 +133,20 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
   Widget _buildToolbar(
     BuildContext context,
     WidgetRef ref,
-    dynamic schema,
+    ProjectSchema schema,
     int tableCount,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final sortMode = ref.watch(sortModeProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.spacingLg,
+        AppConstants.spacingMd,
+        AppConstants.spacingLg,
+        AppConstants.spacingSm,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
@@ -151,13 +164,28 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search tables...',
                       prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: () {
+                                ref.read(searchQueryProvider.notifier).state =
+                                    '';
+                                ref
+                                        .read(_debouncedQueryProvider.notifier)
+                                        .state =
+                                    '';
+                              },
+                            )
+                          : null,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
+                        horizontal: AppConstants.spacingLg,
+                        vertical: AppConstants.spacingMd,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusMd,
+                        ),
                       ),
                     ),
                     onChanged: (value) {
@@ -170,11 +198,11 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppConstants.spacingSm),
               _buildSortButton(context, ref, sortMode),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacingSm),
           Row(
             children: [
               _buildStatChip(
@@ -183,19 +211,19 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
                 '$tableCount tables',
                 colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppConstants.spacingSm),
               _buildStatChip(
                 context,
                 Icons.view_column,
                 '${schema.totalColumns} columns',
-                Colors.teal,
+                Theme.of(context).extension<AppColors>()!.info,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppConstants.spacingSm),
               _buildStatChip(
                 context,
                 Icons.link,
                 '${schema.relationships.length} relations',
-                Colors.purple,
+                Theme.of(context).extension<AppColors>()!.explicitRelation,
               ),
             ],
           ),
@@ -262,7 +290,7 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppConstants.spacingSm),
           Expanded(
             child: Text(
               label,
@@ -294,17 +322,20 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
     return Semantics(
       label: label,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spacingSm,
+          vertical: AppConstants.spacingXs,
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppConstants.radiusLg),
           border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppConstants.spacingXs),
             Text(
               label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -328,7 +359,7 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
             size: 48,
             color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.spacingLg),
           Text(
             'No tables matching "$query"',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -344,10 +375,10 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
     BuildContext context,
     WidgetRef ref,
     List<TableSchema> tables,
-    dynamic schema,
+    ProjectSchema schema,
   ) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingSm),
       itemCount: tables.length,
       itemBuilder: (context, index) {
         final table = tables[index];
@@ -358,7 +389,10 @@ class _SchemaViewerScreenState extends ConsumerState<SchemaViewerScreen> {
             .toList();
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.spacingLg,
+            vertical: AppConstants.spacingXs,
+          ),
           child: TableCard(table: table, relationships: relationships),
         );
       },

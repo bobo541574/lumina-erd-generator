@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show LogicalKeySet, KeyEvent, KeyDownEvent, HardwareKeyboard;
+import 'package:flutter/services.dart'
+    show LogicalKeySet, KeyEvent, KeyDownEvent, HardwareKeyboard;
 
 class AccessibleWidget extends StatelessWidget {
   final Widget child;
@@ -85,9 +86,7 @@ class AccessibleButton extends StatelessWidget {
 
     if (shortcut != null && onPressed != null) {
       result = CallbackShortcuts(
-        bindings: <ShortcutActivator, VoidCallback>{
-          shortcut!: onPressed!,
-        },
+        bindings: <ShortcutActivator, VoidCallback>{shortcut!: onPressed!},
         child: result,
       );
     }
@@ -115,10 +114,12 @@ class ScaleAccessibleText extends StatelessWidget {
     final textScaler = MediaQuery.textScalerOf(context);
     final scaledStyle = style?.copyWith(
       fontSize: style?.fontSize != null
-          ? textScaler.scale(style!.fontSize!).clamp(
-              (style!.fontSize ?? 14) * 0.8,
-              (style!.fontSize ?? 14) * 1.3,
-            )
+          ? textScaler
+                .scale(style!.fontSize!)
+                .clamp(
+                  (style!.fontSize ?? 14) * 0.8,
+                  (style!.fontSize ?? 14) * 1.3,
+                )
           : null,
     );
 

@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/services/export_service.dart';
 import '../../../project_loader/presentation/providers/project_provider.dart';
+import '../../../../core/providers/config_provider.dart';
 import '../widgets/format_selector.dart';
 import '../widgets/preview_pane.dart';
 
-final selectedExportFormatProvider = StateProvider<ExportFormat>(
-  (ref) => ExportFormat.mermaid,
-);
+final selectedExportFormatProvider = StateProvider<ExportFormat>((ref) {
+  final config = ref.read(configProvider);
+  return ExportFormat.values.firstWhere(
+    (f) => f.name == config.defaultExportFormat,
+    orElse: () => ExportFormat.mermaid,
+  );
+});
 
 class ExportScreen extends ConsumerWidget {
   const ExportScreen({super.key});
@@ -18,28 +23,34 @@ class ExportScreen extends ConsumerWidget {
     final selectedFormat = ref.watch(selectedExportFormatProvider);
 
     if (!projectState.isParsed) {
-      return _buildEmptyState(context);
+      return Scaffold(
+        appBar: AppBar(title: const Text('Export ERD')),
+        body: _buildEmptyState(context),
+      );
     }
 
     final schema = projectState.schema!;
     final content = ExportService.export(schema, selectedFormat);
 
-    return Column(
-      children: [
-        FormatSelector(
-          selectedFormat: selectedFormat,
-          onFormatSelected: (format) {
-            ref.read(selectedExportFormatProvider.notifier).state = format;
-          },
-        ),
-        Expanded(
-          child: PreviewPane(
-            content: content,
-            format: selectedFormat,
-            projectName: schema.projectName,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Export ERD')),
+      body: Column(
+        children: [
+          FormatSelector(
+            selectedFormat: selectedFormat,
+            onFormatSelected: (format) {
+              ref.read(selectedExportFormatProvider.notifier).state = format;
+            },
           ),
-        ),
-      ],
+          Expanded(
+            child: PreviewPane(
+              content: content,
+              format: selectedFormat,
+              projectName: schema.projectName,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

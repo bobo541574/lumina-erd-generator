@@ -9,6 +9,12 @@ class RelationshipLine extends CustomPainter {
   final RelationshipSchema relationship;
   final bool isHighlighted;
   final double nodeWidth;
+  final double nodeHeight;
+  final String lineStyle;
+  final String notationStyle;
+  final Color normalColor;
+  final Color highlightedColor;
+  final Color inferredColor;
 
   RelationshipLine({
     required this.sourcePosition,
@@ -16,39 +22,67 @@ class RelationshipLine extends CustomPainter {
     required this.relationship,
     this.isHighlighted = false,
     this.nodeWidth = AppConstants.defaultNodeWidth,
+    this.nodeHeight = 160.0,
+    this.lineStyle = 'orthogonal',
+    this.notationStyle = 'crowsFoot',
+    this.normalColor = const Color(0x99303F9F),
+    this.highlightedColor = Colors.orange,
+    this.inferredColor = const Color(0x99EF6C00),
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sourceCenter = Offset(
-      sourcePosition.dx + nodeWidth / 2,
-      sourcePosition.dy + 60,
-    );
-    final targetCenter = Offset(
-      targetPosition.dx + nodeWidth / 2,
-      targetPosition.dy + 60,
-    );
-
     final color = isHighlighted
-        ? Colors.orange
+        ? highlightedColor
         : relationship.isInferred
-        ? Colors.orange.withValues(alpha: 0.6)
-        : Colors.blue.withValues(alpha: 0.6);
+        ? inferredColor
+        : normalColor;
 
     final paint = Paint()
       ..color = color
       ..strokeWidth = isHighlighted ? 2.5 : 1.5
       ..style = PaintingStyle.stroke;
 
-    final sourcePoint = _getEdgePoint(sourceCenter, targetCenter, nodeWidth);
-    final targetPoint = _getEdgePoint(targetCenter, sourceCenter, nodeWidth);
+    final sourcePoint = _getSourceEdgePoint();
+    final targetPoint = _getTargetEdgePoint();
 
-    _drawCurvedLine(canvas, sourcePoint, targetPoint, paint);
+    switch (lineStyle) {
+      case 'straight':
+        canvas.drawLine(sourcePoint, targetPoint, paint);
+      case 'orthogonal':
+        _drawOrthogonalLine(canvas, sourcePoint, targetPoint, paint);
+      default:
+        _drawCurvedLine(canvas, sourcePoint, targetPoint, paint);
+    }
 
-    _drawArrowHead(canvas, sourcePoint, targetPoint, color, relationship.type);
+    _drawNotation(canvas, sourcePoint, targetPoint, color);
+  }
 
-    if (relationship.type == RelationshipType.belongsToMany) {
-      _drawCrowFoot(canvas, targetPoint, sourcePoint, color);
+  Offset _getSourceEdgePoint() {
+    final centerX = sourcePosition.dx + nodeWidth / 2;
+    final centerY = sourcePosition.dy + nodeHeight / 2;
+    final targetCenterX = targetPosition.dx + nodeWidth / 2;
+
+    if (targetCenterX > centerX + nodeWidth * 0.1) {
+      return Offset(sourcePosition.dx + nodeWidth, centerY);
+    } else if (targetCenterX < centerX - nodeWidth * 0.1) {
+      return Offset(sourcePosition.dx, centerY);
+    } else {
+      return Offset(sourcePosition.dx + nodeWidth, centerY);
+    }
+  }
+
+  Offset _getTargetEdgePoint() {
+    final centerX = targetPosition.dx + nodeWidth / 2;
+    final centerY = targetPosition.dy + nodeHeight / 2;
+    final sourceCenterX = sourcePosition.dx + nodeWidth / 2;
+
+    if (sourceCenterX < centerX - nodeWidth * 0.1) {
+      return Offset(targetPosition.dx, centerY);
+    } else if (sourceCenterX > centerX + nodeWidth * 0.1) {
+      return Offset(targetPosition.dx + nodeWidth, centerY);
+    } else {
+      return Offset(targetPosition.dx, centerY);
     }
   }
 
@@ -79,79 +113,104 @@ class RelationshipLine extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
-  void _drawArrowHead(
+  void _drawOrthogonalLine(
     Canvas canvas,
     Offset start,
     Offset end,
-    Color color,
-    RelationshipType type,
+    Paint paint,
   ) {
-    final arrowPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final angle = atan2(end.dy - start.dy, end.dx - start.dx);
-    const arrowLength = 10.0;
-    const arrowWidth = 6.0;
-
-    final p1 = end;
-    final p2 = Offset(
-      end.dx - arrowLength * cos(angle - pi / 6),
-      end.dy - arrowLength * sin(angle - pi / 6),
-    );
-    final p3 = Offset(
-      end.dx - arrowLength * cos(angle + pi / 6),
-      end.dy - arrowLength * sin(angle + pi / 6),
-    );
+    final midX = (start.dx + end.dx) / 2;
 
     final path = Path()
-      ..moveTo(p1.dx, p1.dy)
-      ..lineTo(p2.dx, p2.dy)
-      ..lineTo(p3.dx, p3.dy)
-      ..close();
+      ..moveTo(start.dx, start.dy)
+      ..lineTo(midX, start.dy)
+      ..lineTo(midX, end.dy)
+      ..lineTo(end.dx, end.dy);
 
-    canvas.drawPath(path, arrowPaint);
+    canvas.drawPath(path, paint);
   }
 
-  void _drawCrowFoot(Canvas canvas, Offset target, Offset source, Color color) {
+  void _drawNotation(
+    Canvas canvas,
+    Offset sourcePoint,
+    Offset targetPoint,
+    Color color,
+  ) {
+    final sourceDir = _directionFromSource(sourcePoint, targetPoint);
+    final targetDir = _directionFromSource(targetPoint, sourcePoint);
+
+    switch (relationship.type) {
+      case RelationshipType.hasMany:
+        _drawOneBar(canvas, sourcePoint, sourceDir, color);
+        _drawCrowFoot(canvas, targetPoint, targetDir, color);
+        break;
+      case RelationshipType.belongsTo:
+        _drawCrowFoot(canvas, sourcePoint, sourceDir, color);
+        _drawOneBar(canvas, targetPoint, targetDir, color);
+        break;
+      case RelationshipType.hasOne:
+        _drawOneBar(canvas, sourcePoint, sourceDir, color);
+        _drawOneBar(canvas, targetPoint, targetDir, color);
+        break;
+      case RelationshipType.belongsToMany:
+        _drawCrowFoot(canvas, sourcePoint, sourceDir, color);
+        _drawCrowFoot(canvas, targetPoint, targetDir, color);
+        break;
+    }
+  }
+
+  double _directionFromSource(Offset source, Offset target) {
+    return atan2(target.dy - source.dy, target.dx - source.dx);
+  }
+
+  void _drawOneBar(Canvas canvas, Offset point, double angle, Color color) {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final angle = atan2(source.dy - target.dy, source.dx - target.dx);
+    const barLength = 8.0;
+    final perpAngle = angle + pi / 2;
+
+    final p1 = Offset(
+      point.dx + barLength * cos(perpAngle),
+      point.dy + barLength * sin(perpAngle),
+    );
+    final p2 = Offset(
+      point.dx - barLength * cos(perpAngle),
+      point.dy - barLength * sin(perpAngle),
+    );
+
+    canvas.drawLine(p1, p2, paint);
+  }
+
+  void _drawCrowFoot(Canvas canvas, Offset point, double angle, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
     const spread = pi / 5;
     const length = 12.0;
 
     final left = Offset(
-      target.dx + length * cos(angle + spread),
-      target.dy + length * sin(angle + spread),
+      point.dx + length * cos(angle + spread),
+      point.dy + length * sin(angle + spread),
     );
     final right = Offset(
-      target.dx + length * cos(angle - spread),
-      target.dy + length * sin(angle - spread),
+      point.dx + length * cos(angle - spread),
+      point.dy + length * sin(angle - spread),
+    );
+    final center = Offset(
+      point.dx + length * cos(angle),
+      point.dy + length * sin(angle),
     );
 
-    canvas.drawLine(target, left, paint);
-    canvas.drawLine(target, right, paint);
-  }
-
-  Offset _getEdgePoint(Offset center, Offset target, double width) {
-    final dx = target.dx - center.dx;
-    final dy = target.dy - center.dy;
-    final distance = sqrt(dx * dx + dy * dy);
-
-    if (distance == 0) return center;
-
-    final halfWidth = width / 2;
-    const halfHeight = 60.0;
-
-    final scaleX = halfWidth / distance;
-    final scaleY = halfHeight / distance;
-    final scale = min(scaleX, scaleY);
-
-    return Offset(center.dx + dx * scale, center.dy + dy * scale);
+    canvas.drawLine(point, left, paint);
+    canvas.drawLine(point, right, paint);
+    canvas.drawLine(point, center, paint);
   }
 
   @override
@@ -159,6 +218,10 @@ class RelationshipLine extends CustomPainter {
     return oldDelegate.sourcePosition != sourcePosition ||
         oldDelegate.targetPosition != targetPosition ||
         oldDelegate.isHighlighted != isHighlighted ||
-        oldDelegate.relationship != relationship;
+        oldDelegate.relationship != relationship ||
+        oldDelegate.lineStyle != lineStyle ||
+        oldDelegate.notationStyle != notationStyle ||
+        oldDelegate.normalColor != normalColor ||
+        oldDelegate.highlightedColor != highlightedColor;
   }
 }

@@ -33,8 +33,7 @@ class TableSchema with _$TableSchema {
       columns.any((c) => c.name == 'created_at') ||
       columns.any((c) => c.name == 'updated_at');
 
-  bool get hasSoftDeletes =>
-      columns.any((c) => c.name == 'deleted_at');
+  bool get hasSoftDeletes => columns.any((c) => c.name == 'deleted_at');
 
   ColumnSchema? get columnByName {
     // This getter is not functional - use getColumnByName method instead
@@ -50,8 +49,7 @@ class TableSchema with _$TableSchema {
 
   bool hasColumn(String name) => getColumnByName(name) != null;
 
-  bool hasIndex(String indexName) =>
-      indexes.any((i) => i.name == indexName);
+  bool hasIndex(String indexName) => indexes.any((i) => i.name == indexName);
 
   List<String> get tableConstraints {
     final c = <String>[];

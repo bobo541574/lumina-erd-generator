@@ -43,7 +43,8 @@ class ProjectSchema with _$ProjectSchema {
 
   int get totalColumns => tables.fold(0, (sum, t) => sum + t.columns.length);
 
-  String get summary => '${tables.length} tables, '
+  String get summary =>
+      '${tables.length} tables, '
       '$totalColumns columns, '
       '${relationships.length} relationships';
 

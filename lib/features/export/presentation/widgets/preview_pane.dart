@@ -21,9 +21,7 @@ class PreviewPane extends StatelessWidget {
     return Column(
       children: [
         _buildToolbar(context),
-        Expanded(
-          child: _buildCodeView(context),
-        ),
+        Expanded(child: _buildCodeView(context)),
       ],
     );
   }
@@ -35,23 +33,17 @@ class PreviewPane extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outlineVariant),
-        ),
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.code,
-            size: 16,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          Icon(Icons.code, size: 16, color: colorScheme.onSurfaceVariant),
           const SizedBox(width: 8),
           Text(
             '${format.displayName} Preview',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 8),
           Container(
@@ -63,8 +55,8 @@ class PreviewPane extends StatelessWidget {
             child: Text(
               '${content.length} chars',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
           const Spacer(),
@@ -103,8 +95,6 @@ class PreviewPane extends StatelessWidget {
     required VoidCallback onPressed,
     bool isPrimary = false,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     if (isPrimary) {
       return FilledButton.tonalIcon(
         onPressed: onPressed,
@@ -193,14 +183,18 @@ class PreviewPane extends StatelessWidget {
     await file.writeAsString(content);
 
     try {
-      await Process.run('open', [file.path]);
+      if (Platform.isMacOS) {
+        await Process.run('open', [file.path]);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [file.path]);
+      } else if (Platform.isWindows) {
+        await Process.run('start', [file.path]);
+      }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open browser: $e'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open browser: $e')));
       }
     }
   }

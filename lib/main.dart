@@ -6,28 +6,25 @@ import 'features/project_loader/presentation/screens/project_loader_screen.dart'
 import 'features/schema_parser/presentation/screens/schema_viewer_screen.dart';
 import 'features/erd_viewer/presentation/screens/erd_viewer_screen.dart';
 import 'features/export/presentation/screens/export_screen.dart';
+import 'core/providers/config_provider.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 import 'shared/widgets/page_transitions.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    const ProviderScope(
-      child: LaravelErdApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: LuminaErdApp()));
 }
 
 final currentIndexProvider = StateProvider<int>((ref) => 0);
 
-class LaravelErdApp extends ConsumerStatefulWidget {
-  const LaravelErdApp({super.key});
+class LuminaErdApp extends ConsumerStatefulWidget {
+  const LuminaErdApp({super.key});
 
   @override
-  ConsumerState<LaravelErdApp> createState() => _LaravelErdAppState();
+  ConsumerState<LuminaErdApp> createState() => _LuminaErdAppState();
 }
 
-class _LaravelErdAppState extends ConsumerState<LaravelErdApp> {
+class _LuminaErdAppState extends ConsumerState<LuminaErdApp> {
   bool? _showOnboarding;
 
   @override
@@ -39,6 +36,17 @@ class _LaravelErdAppState extends ConsumerState<LaravelErdApp> {
   Future<void> _checkOnboarding() async {
     final show = await OnboardingScreen.shouldShow();
     if (mounted) setState(() => _showOnboarding = show);
+  }
+
+  ThemeMode _getThemeMode(String colorScheme) {
+    switch (colorScheme) {
+      case 'dark':
+        return ThemeMode.dark;
+      case 'light':
+        return ThemeMode.light;
+      default:
+        return ThemeMode.system;
+    }
   }
 
   @override
@@ -76,12 +84,14 @@ class _LaravelErdAppState extends ConsumerState<LaravelErdApp> {
       );
     }
 
+    final config = ref.watch(configProvider);
+
     return MaterialApp(
-      title: 'Laravel ERD Studio',
+      title: 'Lumina ERD Studio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: _getThemeMode(config.colorScheme),
       home: const MainShell(),
     );
   }
@@ -102,7 +112,7 @@ class MainShell extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laravel ERD Studio'),
+        title: const Text('Lumina ERD Studio'),
         actions: [
           Semantics(
             label: 'Export diagram',
@@ -111,11 +121,9 @@ class MainShell extends ConsumerWidget {
               tooltip: 'Export ERD',
               onPressed: currentIndex > 0
                   ? () {
-                      Navigator.of(context).push(
-                        SlideUpPageRoute(
-                          page: const ExportScreen(),
-                        ),
-                      );
+                      Navigator.of(
+                        context,
+                      ).push(SlideUpPageRoute(page: const ExportScreen()));
                     }
                   : null,
             ),
@@ -126,11 +134,9 @@ class MainShell extends ConsumerWidget {
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
               onPressed: () {
-                Navigator.of(context).push(
-                  AppPageRoute(
-                    page: const SettingsScreen(),
-                  ),
-                );
+                Navigator.of(
+                  context,
+                ).push(AppPageRoute(page: const SettingsScreen()));
               },
             ),
           ),

@@ -13,18 +13,23 @@ class GraphvizExporter {
     buffer.writeln();
 
     for (final table in schema.tables) {
-      final columnsDef = table.columns.map((col) {
-        final markers = <String>[];
-        if (col.isPrimaryKey) markers.add('PK');
-        if (col.isForeignKey) markers.add('FK');
-        if (col.unique) markers.add('UQ');
+      final columnsDef = table.columns
+          .map((col) {
+            final markers = <String>[];
+            if (col.isPrimaryKey) markers.add('PK');
+            if (col.isForeignKey) markers.add('FK');
+            if (col.unique) markers.add('UQ');
 
-        final markerStr = markers.isNotEmpty ? ' [{${markers.join(', ')}}]' : '';
-        return '${col.name} : ${col.displayType}$markerStr';
-      }).join('\\l ');
+            final markerStr = markers.isNotEmpty
+                ? ' [{${markers.join(', ')}}]'
+                : '';
+            return '${col.name} : ${col.displayType}$markerStr';
+          })
+          .join('\\l ');
 
       buffer.writeln(
-          '  ${table.name} [label="{${table.name}\\l\\l${columnsDef}\\l}"];');
+        '  ${table.name} [label="{${table.name}\\l\\l${columnsDef}\\l}"];',
+      );
     }
 
     buffer.writeln();
@@ -61,7 +66,8 @@ class GraphvizExporter {
       final label = rel.methodName ?? rel.type.displayName;
       final attrStr = attrs.isNotEmpty ? ' [${attrs.join(', ')}]' : '';
       buffer.writeln(
-          '  ${rel.sourceTable} -> ${rel.targetTable} [label="$label"]$attrStr;');
+        '  ${rel.sourceTable} -> ${rel.targetTable} [label="$label"]$attrStr;',
+      );
     }
 
     buffer.writeln('}');

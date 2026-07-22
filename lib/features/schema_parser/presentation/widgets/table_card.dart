@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/table_schema.dart';
 import '../../domain/models/relationship_schema.dart';
-import '../../domain/models/column_schema.dart';
 import '../screens/schema_viewer_screen.dart';
 import 'column_row.dart';
 import 'relationship_badge.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TableCard extends ConsumerWidget {
   final TableSchema table;
@@ -50,6 +50,7 @@ class TableCard extends ConsumerWidget {
     bool isExpanded,
     ColorScheme colorScheme,
   ) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return InkWell(
       onTap: () {
         final current = ref.read(expandedTableProvider);
@@ -82,7 +83,7 @@ class TableCard extends ConsumerWidget {
                       ),
                       if (table.isPivot) ...[
                         const SizedBox(width: 8),
-                        _buildBadge(context, 'PIVOT', Colors.amber),
+                        _buildBadge(context, 'PIVOT', appColors.pivotKey),
                       ],
                     ],
                   ),
@@ -120,6 +121,8 @@ class TableCard extends ConsumerWidget {
   }
 
   Widget _buildConstraintChips(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     final constraints = table.tableConstraints;
     if (constraints.isEmpty) return const SizedBox.shrink();
 
@@ -127,7 +130,7 @@ class TableCard extends ConsumerWidget {
       spacing: 4,
       runSpacing: 2,
       children: constraints.map((c) {
-        final color = _constraintColor(c);
+        final color = _constraintColor(c, appColors, colorScheme);
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
@@ -147,14 +150,19 @@ class TableCard extends ConsumerWidget {
     );
   }
 
-  Color _constraintColor(String constraint) {
-    if (constraint.startsWith('PK')) return Colors.blue;
-    if (constraint.startsWith('FK')) return Colors.orange;
-    if (constraint == 'PIVOT') return Colors.amber;
-    return Colors.grey;
+  Color _constraintColor(
+    String constraint,
+    AppColors appColors,
+    ColorScheme colorScheme,
+  ) {
+    if (constraint.startsWith('PK')) return appColors.primaryKey;
+    if (constraint.startsWith('FK')) return appColors.foreignKey;
+    if (constraint == 'PIVOT') return appColors.pivotKey;
+    return colorScheme.outline;
   }
 
   Widget _buildCountBadges(BuildContext context, ColorScheme colorScheme) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -170,7 +178,7 @@ class TableCard extends ConsumerWidget {
             context,
             '${relationships.length}',
             Icons.link,
-            Colors.purple,
+            appColors.explicitRelation,
           ),
         ],
       ],
@@ -299,7 +307,13 @@ class TableCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.link, size: 16, color: Colors.purple),
+              Icon(
+                Icons.link,
+                size: 16,
+                color: Theme.of(
+                  context,
+                ).extension<AppColors>()!.explicitRelation,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Relationships (${relationships.length})',
@@ -326,6 +340,7 @@ class TableCard extends ConsumerWidget {
   }
 
   Widget _buildIndexesSection(BuildContext context, ColorScheme colorScheme) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -333,7 +348,11 @@ class TableCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.key, size: 16, color: Colors.teal),
+              Icon(
+                Icons.key,
+                size: 16,
+                color: Theme.of(context).extension<AppColors>()!.info,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Indexes (${table.indexes.length})',
@@ -352,7 +371,9 @@ class TableCard extends ConsumerWidget {
                   Icon(
                     index.unique ? Icons.fingerprint : Icons.tag,
                     size: 14,
-                    color: index.unique ? Colors.orange : Colors.grey,
+                    color: index.unique
+                        ? appColors.warning
+                        : colorScheme.outline,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -374,7 +395,7 @@ class TableCard extends ConsumerWidget {
                       context,
                       'UNIQUE',
                       Icons.check,
-                      Colors.orange,
+                      appColors.warning,
                     ),
                   ],
                 ],

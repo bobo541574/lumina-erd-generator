@@ -18,8 +18,9 @@ class MermaidExporter {
         if (col.isForeignKey) constraints.add('FK');
         if (col.unique) constraints.add('UQ');
 
-        final constraintStr =
-            constraints.isNotEmpty ? ' ${constraints.join(',')}' : '';
+        final constraintStr = constraints.isNotEmpty
+            ? ' ${constraints.join(',')}'
+            : '';
         buffer.writeln('        $type ${col.name}$constraintStr');
       }
 
@@ -31,7 +32,8 @@ class MermaidExporter {
       final notation = _relationshipNotation(rel.type);
       final label = rel.methodName ?? '';
       buffer.writeln(
-          '    ${rel.sourceTable.toUpperCase()} $notation ${rel.targetTable.toUpperCase()} : $label');
+        '    ${rel.sourceTable.toUpperCase()} $notation ${rel.targetTable.toUpperCase()} : $label',
+      );
     }
 
     return buffer.toString();

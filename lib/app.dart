@@ -10,13 +10,13 @@ import 'shared/widgets/page_transitions.dart';
 
 final currentIndexProvider = StateProvider<int>((ref) => 0);
 
-class LaravelErdApp extends ConsumerWidget {
-  const LaravelErdApp({super.key});
+class LuminaErdApp extends ConsumerWidget {
+  const LuminaErdApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
-      title: 'Laravel ERD Studio',
+      title: 'Lumina ERD Studio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -41,7 +41,7 @@ class MainShell extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laravel ERD Studio'),
+        title: const Text('Lumina ERD Studio'),
         actions: [
           Semantics(
             label: 'Export diagram',
@@ -50,11 +50,9 @@ class MainShell extends ConsumerWidget {
               tooltip: 'Export ERD',
               onPressed: currentIndex > 0
                   ? () {
-                      Navigator.of(context).push(
-                        SlideUpPageRoute(
-                          page: const ExportScreen(),
-                        ),
-                      );
+                      Navigator.of(
+                        context,
+                      ).push(SlideUpPageRoute(page: const ExportScreen()));
                     }
                   : null,
             ),
@@ -65,11 +63,9 @@ class MainShell extends ConsumerWidget {
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
               onPressed: () {
-                Navigator.of(context).push(
-                  AppPageRoute(
-                    page: const SettingsScreen(),
-                  ),
-                );
+                Navigator.of(
+                  context,
+                ).push(AppPageRoute(page: const SettingsScreen()));
               },
             ),
           ),

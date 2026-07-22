@@ -8,26 +8,34 @@ class HtmlExporter {
     final tablesJson = schema.tables.map((t) {
       return {
         'name': t.name,
-        'columns': t.columns.map((c) => {
-              'name': c.name,
-              'type': c.displayType,
-              'nullable': c.nullable,
-              'primary': c.primary,
-              'unique': c.unique,
-              'foreignKey': c.isForeignKey,
-              'defaultValue': c.defaultValue,
-            }).toList(),
+        'columns': t.columns
+            .map(
+              (c) => {
+                'name': c.name,
+                'type': c.displayType,
+                'nullable': c.nullable,
+                'primary': c.primary,
+                'unique': c.unique,
+                'foreignKey': c.isForeignKey,
+                'defaultValue': c.defaultValue,
+              },
+            )
+            .toList(),
         'isPivot': t.isPivot,
       };
     }).toList();
 
-    final relationshipsJson = schema.relationships.map((r) => {
-          'type': r.type.name,
-          'source': r.sourceTable,
-          'target': r.targetTable,
-          'foreignKey': r.foreignKey,
-          'inferred': r.isInferred,
-        }).toList();
+    final relationshipsJson = schema.relationships
+        .map(
+          (r) => {
+            'type': r.type.name,
+            'source': r.sourceTable,
+            'target': r.targetTable,
+            'foreignKey': r.foreignKey,
+            'inferred': r.isInferred,
+          },
+        )
+        .toList();
 
     return '''<!DOCTYPE html>
 <html lang="en">

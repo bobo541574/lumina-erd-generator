@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../schema_parser/domain/models/project_schema.dart';
 import '../../../schema_parser/domain/models/table_schema.dart';
 import '../../../project_loader/presentation/providers/project_provider.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/providers/config_provider.dart';
 import '../widgets/erd_canvas.dart';
 
 enum LayoutMode { grid, forceDirected }
@@ -13,7 +15,12 @@ final offsetProvider = StateProvider<Offset>((ref) => Offset.zero);
 final showRelationshipsProvider = StateProvider<bool>((ref) => true);
 final compactModeProvider = StateProvider<bool>((ref) => false);
 final selectedTableProvider = StateProvider<String?>((ref) => null);
-final layoutModeProvider = StateProvider<LayoutMode>((ref) => LayoutMode.grid);
+final layoutModeProvider = StateProvider<LayoutMode>((ref) {
+  final config = ref.read(configProvider);
+  return config.defaultLayout == 'forceDirected'
+      ? LayoutMode.forceDirected
+      : LayoutMode.grid;
+});
 
 class ErdViewerScreen extends ConsumerStatefulWidget {
   const ErdViewerScreen({super.key});
@@ -41,7 +48,11 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
       return _buildEmptyState(context);
     }
 
-    final schema = projectState.schema!;
+    final schema = ref.watch(filteredSchemaProvider);
+    if (schema == null || schema.tables.isEmpty) {
+      return _buildEmptyState(context);
+    }
+
     final layoutMode = ref.watch(layoutModeProvider);
 
     if (_tablePositions.isEmpty || _needsLayoutUpdate(schema)) {
@@ -78,8 +89,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
             'Parse a Laravel project first to view\nthe Entity Relationship Diagram.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -90,6 +101,7 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
     final showRels = ref.watch(showRelationshipsProvider);
     final selectedTable = ref.watch(selectedTableProvider);
     final compact = ref.watch(compactModeProvider);
+    final config = ref.watch(configProvider);
 
     return InteractiveViewer(
       transformationController: _transformationController,
@@ -104,6 +116,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
           positions: _tablePositions,
           selectedTableId: selectedTable,
           compactMode: compact,
+          lineStyle: config.lineStyle,
+          notationStyle: config.notationStyle,
           onTableTap: (tableId) {
             ref.read(selectedTableProvider.notifier).state =
                 ref.read(selectedTableProvider) == tableId ? null : tableId;
@@ -175,7 +189,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
                 context,
                 icon: Icons.blur_on,
                 tooltip: 'Force-directed layout',
-                isActive: ref.read(layoutModeProvider) == LayoutMode.forceDirected,
+                isActive:
+                    ref.read(layoutModeProvider) == LayoutMode.forceDirected,
                 onPressed: () {
                   ref.read(layoutModeProvider.notifier).state =
                       LayoutMode.forceDirected;
@@ -189,7 +204,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
                 tooltip: 'Toggle relationships',
                 isActive: showRels,
                 onPressed: () {
-                  ref.read(showRelationshipsProvider.notifier).state = !showRels;
+                  ref.read(showRelationshipsProvider.notifier).state =
+                      !showRels;
                 },
               ),
               const SizedBox(height: 4),
@@ -235,7 +251,7 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -304,7 +320,11 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
     final contentHeight = maxY - minY + 300;
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height - 150;
+    final screenHeight =
+        MediaQuery.of(context).size.height -
+        kToolbarHeight -
+        kBottomNavigationBarHeight -
+        32;
 
     final scaleX = screenWidth / contentWidth;
     final scaleY = screenHeight / contentHeight;
@@ -337,7 +357,7 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
   bool _needsLayoutUpdate(ProjectSchema schema) {
     if (_tablePositions.isEmpty && schema.tables.isNotEmpty) return true;
     for (final table in schema.tables) {
-      if (!_tablePositions.containsKey(table.id)) return true;
+      if (!_tablePositions.containsKey(table.name)) return true;
     }
     return false;
   }
@@ -352,8 +372,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
   }
 
   void _calculateGridLayout(List<TableSchema> tables) {
-    const nodeWidth = 240.0;
-    const nodeHeight = 180.0;
+    const nodeWidth = AppConstants.defaultNodeWidth;
+    const nodeHeight = AppConstants.defaultNodeMinHeight;
     const gapX = 40.0;
     const gapY = 40.0;
 
@@ -363,7 +383,7 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
     for (var i = 0; i < tables.length; i++) {
       final col = i % columns;
       final row = i ~/ columns;
-      positions[tables[i].id] = Offset(
+      positions[tables[i].name] = Offset(
         col * (nodeWidth + gapX),
         row * (nodeHeight + gapY),
       );
@@ -373,8 +393,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
   }
 
   void _calculateForceDirectedLayout(ProjectSchema schema) {
-    const nodeWidth = 240.0;
-    const nodeHeight = 180.0;
+    const nodeWidth = AppConstants.defaultNodeWidth;
+    const nodeHeight = AppConstants.defaultNodeMinHeight;
     const iterations = 50;
     const repulsion = 5000.0;
     const attraction = 0.01;
@@ -385,25 +405,25 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
     final random = Random(42);
 
     for (final table in schema.tables) {
-      positions[table.id] = Offset(
+      positions[table.name] = Offset(
         random.nextDouble() * 800 - 400,
         random.nextDouble() * 600 - 300,
       );
-      velocities[table.id] = Offset.zero;
+      velocities[table.name] = Offset.zero;
     }
 
     for (var iter = 0; iter < iterations; iter++) {
       final forces = <String, Offset>{};
       for (final table in schema.tables) {
-        forces[table.id] = Offset.zero;
+        forces[table.name] = Offset.zero;
       }
 
       for (var i = 0; i < schema.tables.length; i++) {
         for (var j = i + 1; j < schema.tables.length; j++) {
           final t1 = schema.tables[i];
           final t2 = schema.tables[j];
-          final p1 = positions[t1.id]!;
-          final p2 = positions[t2.id]!;
+          final p1 = positions[t1.name]!;
+          final p2 = positions[t2.name]!;
 
           final dx = p2.dx - p1.dx;
           final dy = p2.dy - p1.dy;
@@ -412,8 +432,8 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
           final repulseX = (repulsion / (distance * distance)) * dx / distance;
           final repulseY = (repulsion / (distance * distance)) * dy / distance;
 
-          forces[t1.id] = forces[t1.id]! - Offset(repulseX, repulseY);
-          forces[t2.id] = forces[t2.id]! + Offset(repulseX, repulseY);
+          forces[t1.name] = forces[t1.name]! - Offset(repulseX, repulseY);
+          forces[t2.name] = forces[t2.name]! + Offset(repulseX, repulseY);
         }
       }
 
@@ -436,10 +456,10 @@ class _ErdViewerScreenState extends ConsumerState<ErdViewerScreen> {
       }
 
       for (final table in schema.tables) {
-        final force = forces[table.id]!;
-        final velocity = (velocities[table.id]! + force) * damping;
-        velocities[table.id] = velocity;
-        positions[table.id] = positions[table.id]! + velocity;
+        final force = forces[table.name]!;
+        final velocity = (velocities[table.name]! + force) * damping;
+        velocities[table.name] = velocity;
+        positions[table.name] = positions[table.name]! + velocity;
       }
     }
 

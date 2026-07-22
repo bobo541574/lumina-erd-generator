@@ -11,6 +11,8 @@ class ErdCanvas extends StatelessWidget {
   final Map<String, Offset> positions;
   final String? selectedTableId;
   final bool compactMode;
+  final String lineStyle;
+  final String notationStyle;
   final ValueChanged<String> onTableTap;
   final void Function(String tableId, Offset delta) onTableDrag;
 
@@ -21,19 +23,28 @@ class ErdCanvas extends StatelessWidget {
     required this.positions,
     this.selectedTableId,
     this.compactMode = false,
+    this.lineStyle = 'curved',
+    this.notationStyle = 'crowsFoot',
     required this.onTableTap,
     required this.onTableDrag,
   });
 
   @override
   Widget build(BuildContext context) {
+    final gridColor = Theme.of(
+      context,
+    ).colorScheme.outline.withValues(alpha: 0.06);
+
     return SizedBox(
       width: 3000,
       height: 3000,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          CustomPaint(size: const Size(3000, 3000), painter: _GridPainter()),
+          CustomPaint(
+            size: const Size(3000, 3000),
+            painter: _GridPainter(gridColor: gridColor),
+          ),
           ..._buildRelationshipLines(),
           ..._buildTableNodes(),
         ],
@@ -43,8 +54,8 @@ class ErdCanvas extends StatelessWidget {
 
   List<Widget> _buildTableNodes() {
     return tables.map((table) {
-      final position = positions[table.id] ?? Offset.zero;
-      final isSelected = selectedTableId == table.id;
+      final position = positions[table.name] ?? Offset.zero;
+      final isSelected = selectedTableId == table.name;
       final isRelated = selectedTableId != null && _isRelatedToSelected(table);
 
       return Positioned(
@@ -55,8 +66,8 @@ class ErdCanvas extends StatelessWidget {
           isSelected: isSelected,
           isHighlighted: isRelated,
           compactMode: compactMode,
-          onTap: () => onTableTap(table.id),
-          onDrag: (delta) => onTableDrag(table.id, delta),
+          onTap: () => onTableTap(table.name),
+          onDrag: (delta) => onTableDrag(table.name, delta),
         ),
       );
     }).toList();
@@ -87,12 +98,22 @@ class ErdCanvas extends StatelessWidget {
               relationship: rel,
               isHighlighted: isHighlighted,
               nodeWidth: AppConstants.defaultNodeWidth,
+              nodeHeight: _estimateNodeHeight(rel.sourceTable),
+              lineStyle: lineStyle,
+              notationStyle: notationStyle,
+              normalColor: _lineColor,
+              highlightedColor: _highlightColor,
+              inferredColor: _inferredColor,
             ),
           ),
         ),
       );
     }).toList();
   }
+
+  Color get _lineColor => const Color(0x99303F9F);
+  Color get _highlightColor => Colors.orange;
+  Color get _inferredColor => const Color(0x99EF6C00);
 
   bool _isRelatedToSelected(TableSchema table) {
     if (selectedTableId == null) return false;
@@ -102,13 +123,29 @@ class ErdCanvas extends StatelessWidget {
           (r.targetTable == selectedTableId && r.sourceTable == table.name),
     );
   }
+
+  double _estimateNodeHeight(String tableName) {
+    final table = tables.firstWhere(
+      (t) => t.name == tableName,
+      orElse: () => tables.first,
+    );
+    final columnCount = table.columns.length;
+    return (44 + columnCount * 24).toDouble().clamp(
+      AppConstants.defaultNodeMinHeight,
+      AppConstants.defaultNodeMaxHeight,
+    );
+  }
 }
 
 class _GridPainter extends CustomPainter {
+  final Color gridColor;
+
+  _GridPainter({required this.gridColor});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.08)
+      ..color = gridColor
       ..strokeWidth = 1;
 
     const gridSize = 40.0;

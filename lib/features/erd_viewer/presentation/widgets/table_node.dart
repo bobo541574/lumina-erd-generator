@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../schema_parser/domain/models/table_schema.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TableNode extends StatefulWidget {
   final TableSchema table;
@@ -29,6 +30,7 @@ class _TableNodeState extends State<TableNode>
     with SingleTickerProviderStateMixin {
   Offset _dragStart = Offset.zero;
   bool _isDragging = false;
+  bool _isHovered = false;
   late AnimationController _rippleController;
   late Animation<double> _rippleAnimation;
 
@@ -53,6 +55,7 @@ class _TableNodeState extends State<TableNode>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
     final columns = widget.compactMode
         ? widget.table.columns.take(5).toList()
         : widget.table.columns;
@@ -61,14 +64,16 @@ class _TableNodeState extends State<TableNode>
     final borderColor = widget.isSelected
         ? colorScheme.primary
         : widget.isHighlighted
-            ? Colors.orange
-            : colorScheme.outlineVariant;
+        ? appColors.warning
+        : colorScheme.outlineVariant;
 
     final bgColor = widget.isSelected
         ? colorScheme.primaryContainer.withValues(alpha: 0.3)
         : widget.isHighlighted
-            ? Colors.orange.withValues(alpha: 0.05)
-            : colorScheme.surface;
+        ? appColors.warning.withValues(alpha: 0.05)
+        : _isHovered
+        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+        : colorScheme.surface;
 
     final semanticsLabel =
         '${widget.table.name} table, ${widget.table.columns.length} columns'
@@ -76,85 +81,92 @@ class _TableNodeState extends State<TableNode>
         '${widget.isSelected ? ', selected' : ''}'
         '${widget.isHighlighted ? ', related to selected' : ''}';
 
-    return Semantics(
-      label: semanticsLabel,
-      button: true,
-      selected: widget.isSelected,
-      child: Focus(
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent &&
-              (event.logicalKey == LogicalKeyboardKey.enter ||
-                  event.logicalKey == LogicalKeyboardKey.space)) {
-            widget.onTap();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: ScaleTransition(
-          scale: _rippleAnimation,
-          child: GestureDetector(
-            onTap: () {
-              _rippleController.forward().then((_) => _rippleController.reverse());
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Semantics(
+        label: semanticsLabel,
+        button: true,
+        selected: widget.isSelected,
+        child: Focus(
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent &&
+                (event.logicalKey == LogicalKeyboardKey.enter ||
+                    event.logicalKey == LogicalKeyboardKey.space)) {
               widget.onTap();
-            },
-            onPanStart: (details) {
-              _dragStart = details.localPosition;
-              _isDragging = false;
-            },
-            onPanUpdate: (details) {
-              if (!_isDragging) {
-                final distance = (details.localPosition - _dragStart).distance;
-                if (distance > 5) {
-                  _isDragging = true;
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: ScaleTransition(
+            scale: _rippleAnimation,
+            child: GestureDetector(
+              onPanStart: (details) {
+                _dragStart = details.localPosition;
+                _isDragging = false;
+              },
+              onPanUpdate: (details) {
+                if (!_isDragging) {
+                  final distance =
+                      (details.localPosition - _dragStart).distance;
+                  if (distance > 5) {
+                    _isDragging = true;
+                  }
                 }
-              }
-              if (_isDragging) {
-                widget.onDrag(details.delta);
-              }
-            },
-            onPanEnd: (_) => _isDragging = false,
-            child: Material(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                onTap: () {
-                  _rippleController
-                      .forward()
-                      .then((_) => _rippleController.reverse());
-                  widget.onTap();
-                },
+                if (_isDragging) {
+                  widget.onDrag(details.delta);
+                }
+              },
+              onPanEnd: (_) => _isDragging = false,
+              child: Material(
+                color: bgColor,
                 borderRadius: BorderRadius.circular(8),
-                splashColor: colorScheme.primary.withValues(alpha: 0.1),
-                highlightColor: colorScheme.primary.withValues(alpha: 0.05),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: AppConstants.defaultNodeWidth,
-                  constraints: BoxConstraints(
-                    minHeight: widget.compactMode ? 80 : AppConstants.defaultNodeMinHeight,
-                    maxHeight: widget.compactMode ? 200 : AppConstants.defaultNodeMaxHeight,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: borderColor,
-                      width: widget.isSelected ? 2 : 1,
+                child: InkWell(
+                  onTap: () {
+                    _rippleController.forward().then(
+                      (_) => _rippleController.reverse(),
+                    );
+                    widget.onTap();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  splashColor: colorScheme.primary.withValues(alpha: 0.1),
+                  highlightColor: colorScheme.primary.withValues(alpha: 0.05),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: AppConstants.defaultNodeWidth,
+                    constraints: BoxConstraints(
+                      minHeight: widget.compactMode
+                          ? 80
+                          : AppConstants.defaultNodeMinHeight,
+                      maxHeight: widget.compactMode
+                          ? 200
+                          : AppConstants.defaultNodeMaxHeight,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                            alpha: widget.isSelected ? 0.12 : 0.06),
-                        blurRadius: widget.isSelected ? 12 : 4,
-                        offset: const Offset(0, 2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: borderColor,
+                        width: widget.isSelected ? 2 : 1,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildHeader(context, colorScheme),
-                      _buildColumnList(context, columns, showMore),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: widget.isSelected ? 0.12 : 0.06,
+                          ),
+                          blurRadius: widget.isSelected ? 12 : 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildHeader(context, colorScheme),
+                        _buildColumnList(context, columns, showMore),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -166,6 +178,7 @@ class _TableNodeState extends State<TableNode>
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -174,19 +187,15 @@ class _TableNodeState extends State<TableNode>
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.table_chart,
-            size: 14,
-            color: colorScheme.primary,
-          ),
+          Icon(Icons.table_chart, size: 14, color: colorScheme.primary),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               widget.table.name,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                  ),
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -194,15 +203,15 @@ class _TableNodeState extends State<TableNode>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.2),
+                color: appColors.pivotKey.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(3),
               ),
-              child: const Text(
+              child: Text(
                 'P',
                 style: TextStyle(
                   fontSize: 8,
                   fontWeight: FontWeight.bold,
-                  color: Colors.amber,
+                  color: appColors.pivotKey,
                 ),
               ),
             ),
@@ -210,19 +219,15 @@ class _TableNodeState extends State<TableNode>
           Text(
             '${widget.table.columns.length}',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildColumnList(
-    BuildContext context,
-    List columns,
-    bool showMore,
-  ) {
+  Widget _buildColumnList(BuildContext context, List columns, bool showMore) {
     return Flexible(
       child: Container(
         constraints: const BoxConstraints(maxHeight: 280),
@@ -233,13 +238,16 @@ class _TableNodeState extends State<TableNode>
           itemBuilder: (context, index) {
             if (showMore && index == columns.length) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 child: Text(
                   '+${widget.table.columns.length - 5} more...',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               );
             }
@@ -256,7 +264,8 @@ class _TableNodeState extends State<TableNode>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Semantics(
-      label: '${column.name}, ${column.type}'
+      label:
+          '${column.name}, ${column.type}'
           '${column.isPrimaryKey ? ', primary key' : ''}'
           '${column.isForeignKey ? ', foreign key' : ''}'
           '${column.nullable ? ', nullable' : ''}',
@@ -270,25 +279,25 @@ class _TableNodeState extends State<TableNode>
               child: Text(
                 column.name,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                      color: column.isPrimaryKey || column.isForeignKey
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant,
-                      fontWeight: column.isPrimaryKey || column.isForeignKey
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: column.isPrimaryKey || column.isForeignKey
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight: column.isPrimaryKey || column.isForeignKey
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Text(
               _shortType(column.type),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontFamily: 'monospace',
-                    fontSize: 9,
-                    color: colorScheme.outline,
-                  ),
+                fontFamily: 'monospace',
+                fontSize: 9,
+                color: colorScheme.outline,
+              ),
             ),
           ],
         ),
@@ -298,11 +307,12 @@ class _TableNodeState extends State<TableNode>
 
   Widget _buildColumnIcon(BuildContext context, dynamic column) {
     final colorScheme = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
     if (column.isPrimaryKey) {
-      return Icon(Icons.vpn_key, size: 12, color: Colors.blue.shade600);
+      return Icon(Icons.vpn_key, size: 12, color: appColors.primaryKey);
     }
     if (column.isForeignKey) {
-      return Icon(Icons.link, size: 12, color: Colors.orange.shade600);
+      return Icon(Icons.link, size: 12, color: appColors.foreignKey);
     }
     return Container(
       width: 4,

@@ -1,19 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/services/project_parser.dart';
 import '../providers/project_provider.dart';
+import '../../../../main.dart';
 
 class ProjectLoaderScreen extends ConsumerStatefulWidget {
   const ProjectLoaderScreen({super.key});
 
   @override
-  ConsumerState<ProjectLoaderScreen> createState() => _ProjectLoaderScreenState();
+  ConsumerState<ProjectLoaderScreen> createState() =>
+      _ProjectLoaderScreenState();
 }
 
 class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
+  bool _shouldNavigateToSchema = false;
+
   @override
   Widget build(BuildContext context) {
     final projectState = ref.watch(projectProvider);
+
+    ref.listen<ProjectState>(projectProvider, (previous, next) {
+      if (previous != null &&
+          !previous.isParsed &&
+          next.isParsed &&
+          !_shouldNavigateToSchema) {
+        _shouldNavigateToSchema = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(currentIndexProvider.notifier).state = 1;
+            _shouldNavigateToSchema = false;
+          }
+        });
+      }
+    });
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -40,23 +60,23 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
       children: [
         Icon(
           Icons.folder_open,
-          size: 96,
+          size: 80,
           color: colorScheme.primary.withValues(alpha: 0.4),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         Text(
-          'Laravel ERD Generator',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          'Lumina ERD Studio',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           'Select a Laravel project to generate\nan Entity Relationship Diagram.',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 40),
         FilledButton.icon(
@@ -151,18 +171,19 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        projectState.parserResult?.schema.projectName ?? 'Project',
+                        projectState.parserResult?.schema.projectName ??
+                            'Project',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         projectState.directoryPath!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontFamily: 'monospace',
-                            ),
+                          color: colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -170,7 +191,8 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => ref.read(projectProvider.notifier).clearProject(),
+                  onPressed: () =>
+                      ref.read(projectProvider.notifier).clearProject(),
                   icon: const Icon(Icons.close),
                   tooltip: 'Close project',
                 ),
@@ -187,7 +209,9 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
   Widget _buildBreadcrumb(BuildContext context, ProjectState projectState) {
     final path = projectState.directoryPath!;
     final parts = path.split('/');
-    final displayParts = parts.length > 3 ? parts.sublist(parts.length - 3) : parts;
+    final displayParts = parts.length > 3
+        ? parts.sublist(parts.length - 3)
+        : parts;
 
     return Wrap(
       spacing: 4,
@@ -196,10 +220,10 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
           Text(
             displayParts[i],
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: i == displayParts.length - 1
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: i == displayParts.length - 1
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           if (i < displayParts.length - 1)
             Icon(
@@ -228,8 +252,8 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
             Text(
               'Scanning migrations and models',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -255,29 +279,32 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
                   child: Text(
                     'Invalid Project',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onErrorContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              projectState.errorMessage ?? 'The selected directory is not a valid Laravel project.',
+              projectState.errorMessage ??
+                  'The selected directory is not a valid Laravel project.',
               style: TextStyle(color: colorScheme.onErrorContainer),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 OutlinedButton.icon(
-                  onPressed: () => ref.read(projectProvider.notifier).pickDirectory(),
+                  onPressed: () =>
+                      ref.read(projectProvider.notifier).pickDirectory(),
                   icon: const Icon(Icons.folder_open),
                   label: const Text('Try Another Directory'),
                 ),
                 const SizedBox(width: 8),
                 TextButton(
-                  onPressed: () => ref.read(projectProvider.notifier).clearProject(),
+                  onPressed: () =>
+                      ref.read(projectProvider.notifier).clearProject(),
                   child: const Text('Cancel'),
                 ),
               ],
@@ -310,16 +337,15 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
                     Text(
                       'Project Analyzed Successfully',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
                 _buildStatsGrid(context, result),
                 const SizedBox(height: 20),
-                if (result.usedModelInference)
-                  _buildInferenceNote(context),
+                if (result.usedModelInference) _buildInferenceNote(context),
               ],
             ),
           ),
@@ -344,9 +370,9 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Warnings',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -357,8 +383,8 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
                 child: Text(
                   warning,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
           ],
@@ -369,13 +395,34 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
 
   Widget _buildStatsGrid(BuildContext context, ProjectParserResult result) {
     final colorScheme = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>()!;
 
     final stats = [
-      (Icons.table_chart, 'Tables', '${result.schema.tables.length}', colorScheme.primary),
-      (Icons.file_copy, 'Migrations', '${result.migrationCount}', Colors.teal),
-      (Icons.code, 'Models', '${result.modelCount}', Colors.orange),
-      (Icons.link, 'Relationships', '${result.schema.relationships.length}', Colors.purple),
-      (Icons.view_column, 'Columns', '${result.schema.totalColumns}', Colors.blue),
+      (
+        Icons.table_chart,
+        'Tables',
+        '${result.schema.tables.length}',
+        colorScheme.primary,
+      ),
+      (
+        Icons.file_copy,
+        'Migrations',
+        '${result.migrationCount}',
+        appColors.success,
+      ),
+      (Icons.code, 'Models', '${result.modelCount}', appColors.warning),
+      (
+        Icons.link,
+        'Relationships',
+        '${result.schema.relationships.length}',
+        appColors.info,
+      ),
+      (
+        Icons.view_column,
+        'Columns',
+        '${result.schema.totalColumns}',
+        appColors.primaryKey,
+      ),
     ];
 
     return Wrap(
@@ -388,9 +435,7 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
           decoration: BoxDecoration(
             color: stat.$4.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: stat.$4.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: stat.$4.withValues(alpha: 0.2)),
           ),
           child: Column(
             children: [
@@ -399,16 +444,16 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
               Text(
                 stat.$3,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: stat.$4,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: stat.$4,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 stat.$2,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -434,8 +479,8 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
             child: Text(
               'Relationships inferred from model files (no explicit foreign keys found in migrations).',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                  ),
+                color: colorScheme.onSecondaryContainer,
+              ),
             ),
           ),
         ],
@@ -454,10 +499,11 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
         ),
         const SizedBox(width: 12),
         FilledButton.icon(
-          onPressed: () {
-            // Navigate to schema view
-            // This will be wired up when we have proper navigation
-          },
+          onPressed: projectState.isParsed
+              ? () {
+                  ref.read(currentIndexProvider.notifier).state = 1;
+                }
+              : null,
           icon: const Icon(Icons.table_chart),
           label: const Text('View Schema'),
         ),

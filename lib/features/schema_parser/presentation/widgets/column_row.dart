@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/column_schema.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ColumnRow extends StatelessWidget {
   final ColumnSchema column;
   final bool isEven;
 
-  const ColumnRow({
-    super.key,
-    required this.column,
-    this.isEven = true,
-  });
+  const ColumnRow({super.key, required this.column, this.isEven = true});
 
   @override
   Widget build(BuildContext context) {
@@ -17,36 +14,30 @@ class ColumnRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: isEven ? null : colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+      color: isEven
+          ? null
+          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
       child: Row(
         children: [
           _buildKeyIcon(context, colorScheme),
           const SizedBox(width: 8),
-          Expanded(
-            flex: 3,
-            child: _buildColumnName(context),
-          ),
+          Expanded(flex: 3, child: _buildColumnName(context)),
           const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: _buildTypeBadge(context, colorScheme),
-          ),
+          Expanded(flex: 2, child: _buildTypeBadge(context)),
           const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: _buildConstraints(context, colorScheme),
-          ),
+          Expanded(flex: 2, child: _buildConstraints(context)),
         ],
       ),
     );
   }
 
   Widget _buildKeyIcon(BuildContext context, ColorScheme colorScheme) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     if (column.isPrimaryKey) {
-      return Icon(Icons.vpn_key, size: 16, color: Colors.blue.shade600);
+      return Icon(Icons.vpn_key, size: 16, color: appColors.primaryKey);
     }
     if (column.isForeignKey) {
-      return Icon(Icons.link, size: 16, color: Colors.orange.shade600);
+      return Icon(Icons.link, size: 16, color: appColors.foreignKey);
     }
     return Icon(
       column.nullable ? Icons.remove_circle_outline : Icons.circle,
@@ -59,17 +50,18 @@ class ColumnRow extends StatelessWidget {
     return Text(
       column.name,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontFamily: 'monospace',
-            fontWeight: column.isPrimaryKey || column.isForeignKey
-                ? FontWeight.bold
-                : FontWeight.normal,
-          ),
+        fontFamily: 'monospace',
+        fontWeight: column.isPrimaryKey || column.isForeignKey
+            ? FontWeight.bold
+            : FontWeight.normal,
+      ),
       overflow: TextOverflow.ellipsis,
     );
   }
 
-  Widget _buildTypeBadge(BuildContext context, ColorScheme colorScheme) {
-    final color = _typeColor(column.columnType);
+  Widget _buildTypeBadge(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final color = _typeColor(column.columnType, appColors);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -80,16 +72,17 @@ class ColumnRow extends StatelessWidget {
       ),
       child: Text(
         column.displayType,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontFamily: 'monospace',
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: color, fontFamily: 'monospace'),
         overflow: TextOverflow.ellipsis,
       ),
     );
   }
 
-  Widget _buildConstraints(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildConstraints(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     final constraints = column.constraints;
     if (constraints.isEmpty) return const SizedBox.shrink();
 
@@ -97,7 +90,7 @@ class ColumnRow extends StatelessWidget {
       spacing: 3,
       runSpacing: 2,
       children: constraints.map((c) {
-        final color = _constraintColor(c);
+        final color = _constraintColor(c, appColors, colorScheme);
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
           decoration: BoxDecoration(
@@ -107,80 +100,84 @@ class ColumnRow extends StatelessWidget {
           child: Text(
             c,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         );
       }).toList(),
     );
   }
 
-  Color _typeColor(ColumnType type) {
+  Color _typeColor(ColumnType type, AppColors appColors) {
     switch (type) {
       case ColumnType.id:
       case ColumnType.bigIncrements:
       case ColumnType.increments:
-        return Colors.blue;
+        return appColors.primaryKey;
       case ColumnType.string:
       case ColumnType.char:
       case ColumnType.text:
       case ColumnType.longText:
       case ColumnType.mediumText:
-        return Colors.teal;
+        return appColors.typeString;
       case ColumnType.integer:
       case ColumnType.bigInteger:
       case ColumnType.smallInteger:
       case ColumnType.tinyInteger:
-        return Colors.indigo;
+        return appColors.typeInteger;
       case ColumnType.boolean:
-        return Colors.orange;
+        return appColors.typeBoolean;
       case ColumnType.date:
       case ColumnType.datetime:
       case ColumnType.timestamp:
       case ColumnType.time:
       case ColumnType.year:
-        return Colors.purple;
+        return appColors.typeDate;
       case ColumnType.json:
-        return Colors.brown;
+        return appColors.typeJson;
       case ColumnType.enumType:
-        return Colors.deepPurple;
+        return appColors.typeEnum;
       case ColumnType.float:
       case ColumnType.double:
       case ColumnType.decimal:
-        return Colors.cyan;
+        return appColors.typeFloat;
       case ColumnType.binary:
-        return Colors.grey;
+        return appColors.typeBinary;
       case ColumnType.uuid:
-        return Colors.pink;
+        return appColors.typeUuid;
       case ColumnType.foreignId:
       case ColumnType.foreign:
-        return Colors.orange;
+        return appColors.foreignKey;
       case ColumnType.morphs:
       case ColumnType.nullableMorphs:
-        return Colors.amber;
+        return appColors.typeMorphs;
       default:
-        return Colors.grey;
+        return appColors.typeDefault;
     }
   }
 
-  Color _constraintColor(String constraint) {
+  Color _constraintColor(
+    String constraint,
+    AppColors appColors,
+    ColorScheme colorScheme,
+  ) {
     switch (constraint) {
       case 'PK':
-        return Colors.blue;
+        return appColors.primaryKey;
       case 'UQ':
-        return Colors.teal;
+        return appColors.info;
       case 'NULL':
-        return Colors.grey;
+        return colorScheme.outline;
       case 'AI':
-        return Colors.indigo;
+        return appColors.primaryKey;
       case 'FK':
-        return Colors.orange;
+        return appColors.foreignKey;
       case 'UNSIGNED':
-        return Colors.brown;
+        return appColors.typeJson;
       default:
-        return Colors.grey;
+        return colorScheme.outline;
     }
   }
 }

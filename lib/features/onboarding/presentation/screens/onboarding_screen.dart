@@ -29,19 +29,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.folder_open,
       iconColor: Color(0xFF5C6BC0),
       title: 'Open Your Laravel Project',
-      description: 'Select any Laravel project directory. The app scans migrations and models to understand your database structure.',
+      description:
+          'Select any Laravel project directory. The app scans migrations and models to understand your database structure.',
     ),
     _OnboardingPage(
       icon: Icons.account_tree,
       iconColor: Color(0xFF26A69A),
       title: 'Visualize Your Schema',
-      description: 'View an interactive Entity Relationship Diagram with draggable table nodes, relationship lines, and zoom controls.',
+      description:
+          'View an interactive Entity Relationship Diagram with draggable table nodes, relationship lines, and zoom controls.',
     ),
     _OnboardingPage(
       icon: Icons.file_download,
       iconColor: Color(0xFFEF5350),
       title: 'Export Anywhere',
-      description: 'Export your ERD as Mermaid, DBML, HTML, Markdown, PlantUML, or Graphviz. Share with your team instantly.',
+      description:
+          'Export your ERD as Mermaid, DBML, HTML, Markdown, PlantUML, or Graphviz. Share with your team instantly.',
     ),
   ];
 
@@ -163,27 +166,23 @@ class _OnboardingPage extends StatelessWidget {
               color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 56,
-              color: iconColor,
-            ),
+            child: Icon(icon, size: 56, color: iconColor),
           ),
           const SizedBox(height: 40),
           Text(
             title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
             description,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

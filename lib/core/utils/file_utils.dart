@@ -12,7 +12,12 @@ class FileUtils {
     return p.extension(path);
   }
 
-  static String join(String part1, [String? part2, String? part3, String? part4]) {
+  static String join(
+    String part1, [
+    String? part2,
+    String? part3,
+    String? part4,
+  ]) {
     return p.join(part1, part2, part3, part4);
   }
 

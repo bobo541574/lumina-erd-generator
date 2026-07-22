@@ -25,8 +25,9 @@ class PlantUmlExporter {
         if (col.isForeignKey) markers.add('FK');
         if (col.unique) markers.add('UQ');
 
-        final markerStr =
-            markers.isNotEmpty ? ' <<${markers.join(', ')}>>' : '';
+        final markerStr = markers.isNotEmpty
+            ? ' <<${markers.join(', ')}>>'
+            : '';
         buffer.writeln('  * ${col.name} : ${col.displayType}$markerStr');
       }
 
@@ -36,8 +37,7 @@ class PlantUmlExporter {
 
     for (final rel in schema.relationships) {
       final notation = _plantUmlNotation(rel.type);
-      buffer.writeln(
-          '${rel.sourceTable} ${notation} ${rel.targetTable}');
+      buffer.writeln('${rel.sourceTable} ${notation} ${rel.targetTable}');
     }
 
     if (schema.relationships.isNotEmpty) buffer.writeln();

@@ -1,4 +1,4 @@
-# AGENTS.md — Laravel ERD Generator
+# AGENTS.md — Lumina ERD Generator
 
 ## Project Overview
 
@@ -35,7 +35,7 @@ make test-unit    # unit tests only
 - **Pattern**: Feature-first clean architecture
 - **State Management**: Riverpod (StateNotifier + Provider)
 - **Models**: Freezed (immutable, with JSON serialization)
-- **Theme**: Material 3, deep indigo primary
+- **Theme**: Material 3, deep indigo primary (`#303F9F`)
 
 ### Feature Modules (`lib/features/`)
 
@@ -50,8 +50,8 @@ make test-unit    # unit tests only
 
 ### Entry Points
 
-- `lib/main.dart` — App bootstrap
-- `lib/app.dart` — MaterialApp + navigation shell
+- `lib/main.dart` — App bootstrap + `MainShell` (the real app)
+- `lib/app.dart` — Dead duplicate of `main.dart`'s `LuminaErdApp` + `MainShell` + `currentIndexProvider`
 
 ## Conventions
 
@@ -64,6 +64,7 @@ make test-unit    # unit tests only
 
 ## Critical Gotchas
 
-1. **Freezed codegen**: After modifying any model with `@freezed`, you MUST run `dart run build_runner build --delete-conflicting-outputs` before testing or analyzing
-2. **Commit conventions**: Use conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`)
-3. **One feature per commit**: Keep commits focused on a single feature or fix
+1. **Freezed codegen**: After modifying any model with `@freezed`, you MUST run `dart run build_runner build --delete-conflicting-outputs` before testing or analyzing. Freezed produces both `.freezed.dart` and `.g.dart` files (the latter from `json_serializable`).
+2. **`lib/app.dart` is dead code**: `main.dart` redefines `currentIndexProvider`, `LuminaErdApp`, and `MainShell` inline. `app.dart` is never imported by production code, but test files (`test/widget_test.dart`, `test/widget/erd_viewer_test.dart`) import it. Both files define `currentIndexProvider` at the top level — importing both would cause a compile error.
+3. **Integration test path**: Integration tests live at `test/integration/`, not `integration_test/`. The Makefile has no integration test target — run with `flutter test test/integration/`.
+4. **Unit tests create temp directories**: Parser tests write to `Directory.systemTemp.createTempSync()` and clean up after. They require filesystem access (no mocking).

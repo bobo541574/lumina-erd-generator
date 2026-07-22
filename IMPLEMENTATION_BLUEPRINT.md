@@ -1,10 +1,10 @@
-# **Laravel ERD Generator - Flutter App Development Blueprint**
+# **Lumina ERD Generator - Flutter App Development Blueprint**
 
 # **🔷 PHASE 1: Project Initialization & Architecture Setup**
 
 ```
 PROMPT:
-Create a Flutter project named "laravel_erd_generator" with the following structure and dependencies:
+Create a Flutter project named "lumina_erd_generator" with the following structure and dependencies:
 
 Project Structure:
 
@@ -82,7 +82,7 @@ Use clean architecture with feature-first approach.
 
 ```
 PROMPT:
-Create the core data models for the Laravel ERD Generator app using Freezed.
+Create the core data models for the Lumina ERD Generator app using Freezed.
 These models represent the parsed database schema.
 
 Create the following files:
@@ -553,7 +553,7 @@ Create test files:
 
 ```
 PROMPT:
-Final polish and optimization for the Laravel ERD Generator app.
+Final polish and optimization for the Lumina ERD Generator app.
 
 Tasks:
 1. Add onboarding flow:
@@ -587,7 +587,7 @@ Tasks:
    - Loading animation
 
 6. Prepare for release:
-   - App name: "Laravel ERD Studio"
+   - App name: "Lumina ERD Studio"
    - Version: 1.0.0
    - Privacy policy page
    - Rate app prompt after 5 exports

@@ -1,6 +1,6 @@
-# Contributing to Laravel ERD Studio
+# Contributing to Lumina ERD Studio
 
-Thank you for considering contributing to Laravel ERD Studio!
+Thank you for considering contributing to Lumina ERD Studio!
 
 ## Getting Started
 

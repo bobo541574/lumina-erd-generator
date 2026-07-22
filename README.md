@@ -1,4 +1,4 @@
-# Laravel ERD Studio
+# Lumina ERD Studio
 
 A desktop & mobile application that analyzes Laravel projects and generates interactive Entity Relationship Diagrams.
 
@@ -16,7 +16,7 @@ A desktop & mobile application that analyzes Laravel projects and generates inte
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Laravel ERD Studio                         │
+│  Lumina ERD Studio                          │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐     │
 │  │ Select  │→ │ Schema  │→ │   ERD   │     │
 │  │ Project │  │ Viewer  │  │ Canvas  │     │
@@ -37,8 +37,8 @@ A desktop & mobile application that analyzes Laravel projects and generates inte
 
 ```bash
 # Clone
-git clone https://github.com/your-org/laravel_erd_generator.git
-cd laravel_erd_generator
+git clone https://github.com/your-org/lumina_erd_generator.git
+cd lumina_erd_generator
 
 # Install dependencies
 flutter pub get

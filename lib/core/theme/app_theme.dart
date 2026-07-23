@@ -68,30 +68,39 @@ class AppTheme {
     extensions: const [AppColors.light],
   );
 
+  static const _darkSurface = Color(0xFF1A1A2E);
+  static const _darkSurfaceContainer = Color(0xFF222236);
+  static const _darkSurfaceContainerHigh = Color(0xFF2D2D42);
+  static const _darkOutline = Color(0xFF3D3D56);
+
   static final darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     colorSchemeSeed: _primaryColor,
+    scaffoldBackgroundColor: _darkSurface,
     fontFamily: 'Inter',
     appBarTheme: const AppBarTheme(
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 1,
+      backgroundColor: _darkSurface,
+      surfaceTintColor: Colors.transparent,
     ),
     cardTheme: CardThemeData(
-      elevation: 2,
+      elevation: 0,
+      color: _darkSurfaceContainer,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.grey.shade900,
+      fillColor: _darkSurfaceContainer,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade700),
+        borderSide: const BorderSide(color: _darkOutline),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade700),
+        borderSide: const BorderSide(color: _darkOutline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -101,11 +110,13 @@ class AppTheme {
     ),
     navigationBarTheme: NavigationBarThemeData(
       elevation: 0,
+      backgroundColor: _darkSurface,
       indicatorColor: _primaryColor.withValues(alpha: 0.2),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
     ),
     dialogTheme: DialogThemeData(
       elevation: 8,
+      backgroundColor: _darkSurfaceContainerHigh,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     snackBarTheme: const SnackBarThemeData(
@@ -117,7 +128,7 @@ class AppTheme {
     tooltipTheme: TooltipThemeData(
       preferBelow: true,
       decoration: BoxDecoration(
-        color: Colors.grey.shade700,
+        color: _darkSurfaceContainerHigh,
         borderRadius: BorderRadius.circular(6),
       ),
     ),

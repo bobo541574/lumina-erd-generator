@@ -129,6 +129,24 @@ class MainShell extends ConsumerWidget {
             ),
           ),
           Semantics(
+            label: 'Toggle theme',
+            child: IconButton(
+              icon: Icon(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Icons.light_mode
+                    : Icons.dark_mode,
+              ),
+              tooltip: 'Toggle light/dark theme',
+              onPressed: () {
+                final config = ref.read(configProvider);
+                final next = config.colorScheme == 'dark' ? 'light' : 'dark';
+                ref
+                    .read(configProvider.notifier)
+                    .update(config.copyWith(colorScheme: next));
+              },
+            ),
+          ),
+          Semantics(
             label: 'Settings',
             child: IconButton(
               icon: const Icon(Icons.settings),

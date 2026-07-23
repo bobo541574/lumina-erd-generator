@@ -39,7 +39,7 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
       padding: const EdgeInsets.all(24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: const BoxConstraints(maxWidth: 720),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: projectState.hasProject
@@ -428,34 +428,42 @@ class _ProjectLoaderScreenState extends ConsumerState<ProjectLoaderScreen> {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
+      alignment: WrapAlignment.center,
       children: stats.map((stat) {
-        return Container(
-          width: 100,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: stat.$4.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: stat.$4.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            children: [
-              Icon(stat.$1, color: stat.$4, size: 24),
-              const SizedBox(height: 8),
-              Text(
-                stat.$3,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: stat.$4,
+        return SizedBox(
+          width: 120,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: stat.$4.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: stat.$4.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // အကွက်အတွင်းပိုင်းကို ညီညာစေရန်
+              children: [
+                Icon(stat.$1, color: stat.$4, size: 24),
+                const SizedBox(height: 8),
+                Text(
+                  stat.$3,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: stat.$4,
+                  ),
+                  textAlign:
+                      TextAlign.center, // စာသားကိုလည်း အလယ်ချိန်ညှိပေးတယ်
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                stat.$2,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                const SizedBox(height: 2),
+                Text(
+                  stat.$2,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }).toList(),

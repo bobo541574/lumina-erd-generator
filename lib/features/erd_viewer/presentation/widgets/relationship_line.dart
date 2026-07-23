@@ -15,6 +15,7 @@ class RelationshipLine extends CustomPainter {
   final Color normalColor;
   final Color highlightedColor;
   final Color inferredColor;
+  final List<Rect> obstacleRects;
 
   RelationshipLine({
     required this.sourcePosition,
@@ -28,6 +29,7 @@ class RelationshipLine extends CustomPainter {
     this.normalColor = const Color(0x99303F9F),
     this.highlightedColor = Colors.orange,
     this.inferredColor = const Color(0x99EF6C00),
+    this.obstacleRects = const [],
   });
 
   @override
@@ -43,89 +45,166 @@ class RelationshipLine extends CustomPainter {
       ..strokeWidth = isHighlighted ? 2.5 : 1.5
       ..style = PaintingStyle.stroke;
 
-    final sourcePoint = _getSourceEdgePoint();
-    final targetPoint = _getTargetEdgePoint();
+    final sourceRect = Rect.fromLTWH(
+      sourcePosition.dx,
+      sourcePosition.dy,
+      nodeWidth,
+      nodeHeight,
+    );
+    final targetRect = Rect.fromLTWH(
+      targetPosition.dx,
+      targetPosition.dy,
+      nodeWidth,
+      nodeHeight,
+    );
+
+    final sourcePoint = _getBestEdgePoint(sourceRect, targetRect);
+    final targetPoint = _getBestEdgePoint(targetRect, sourceRect);
+
+    final sourceDir = _edgeDirection(sourceRect, sourcePoint);
+    final targetDir = _edgeDirection(targetRect, targetPoint);
+
+    final routed = _routeWithObstacleAvoidance(
+      sourcePoint,
+      targetPoint,
+      sourceDir,
+      targetDir,
+    );
 
     switch (lineStyle) {
       case 'straight':
         canvas.drawLine(sourcePoint, targetPoint, paint);
       case 'orthogonal':
-        _drawOrthogonalLine(canvas, sourcePoint, targetPoint, paint);
+        _drawOrthogonalLine(canvas, routed, paint);
       default:
-        _drawCurvedLine(canvas, sourcePoint, targetPoint, paint);
+        _drawCurvedLine(canvas, sourcePoint, targetPoint, sourceDir, targetDir, routed, paint);
     }
 
-    _drawNotation(canvas, sourcePoint, targetPoint, color);
+    _drawNotation(canvas, sourcePoint, targetPoint, sourceDir, targetDir, color);
   }
 
-  Offset _getSourceEdgePoint() {
-    final centerX = sourcePosition.dx + nodeWidth / 2;
-    final centerY = sourcePosition.dy + nodeHeight / 2;
-    final targetCenterX = targetPosition.dx + nodeWidth / 2;
+  Offset _getBestEdgePoint(Rect rect, Rect otherRect) {
+    final cx = rect.center.dx;
+    final cy = rect.center.dy;
+    final candidates = <Offset>[
+      Offset(rect.right, cy),
+      Offset(rect.left, cy),
+      Offset(cx, rect.bottom),
+      Offset(cx, rect.top),
+    ];
 
-    if (targetCenterX > centerX + nodeWidth * 0.1) {
-      return Offset(sourcePosition.dx + nodeWidth, centerY);
-    } else if (targetCenterX < centerX - nodeWidth * 0.1) {
-      return Offset(sourcePosition.dx, centerY);
-    } else {
-      return Offset(sourcePosition.dx + nodeWidth, centerY);
+    var best = candidates.first;
+    var bestDist = double.infinity;
+    for (final c in candidates) {
+      final d = (c - otherRect.center).distanceSquared;
+      if (d < bestDist) {
+        bestDist = d;
+        best = c;
+      }
     }
+    return best;
   }
 
-  Offset _getTargetEdgePoint() {
-    final centerX = targetPosition.dx + nodeWidth / 2;
-    final centerY = targetPosition.dy + nodeHeight / 2;
-    final sourceCenterX = sourcePosition.dx + nodeWidth / 2;
-
-    if (sourceCenterX < centerX - nodeWidth * 0.1) {
-      return Offset(targetPosition.dx, centerY);
-    } else if (sourceCenterX > centerX + nodeWidth * 0.1) {
-      return Offset(targetPosition.dx + nodeWidth, centerY);
-    } else {
-      return Offset(targetPosition.dx, centerY);
-    }
+  double _edgeDirection(Rect rect, Offset point) {
+    if (point.dx == rect.left) return pi;
+    if (point.dx == rect.right) return 0;
+    if (point.dy == rect.top) return -pi / 2;
+    if (point.dy == rect.bottom) return pi / 2;
+    return 0;
   }
 
-  void _drawCurvedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
+  List<Offset> _routeWithObstacleAvoidance(
+    Offset start,
+    Offset end,
+    double startDir,
+    double endDir,
+  ) {
+    if (obstacleRects.isEmpty) return [start, end];
+
+    final segment = LineSegment(start, end);
+    final blocked = obstacleRects.any((r) => segment.intersectsRect(r));
+    if (!blocked) return [start, end];
+
+    final waypoints = <Offset>[start];
     final midX = (start.dx + end.dx) / 2;
-    final midY = (start.dy + end.dy) / 2;
+    final offsetX = (end.dx - start.dx).abs() * 0.25;
 
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    final distance = sqrt(dx * dx + dy * dy);
+    if (start.dy < end.dy) {
+      waypoints.add(Offset(midX + offsetX, start.dy));
+      waypoints.add(Offset(midX + offsetX, end.dy));
+    } else {
+      waypoints.add(Offset(midX - offsetX, start.dy));
+      waypoints.add(Offset(midX - offsetX, end.dy));
+    }
+    waypoints.add(end);
+    return waypoints;
+  }
 
-    final curvature = min(distance * 0.2, 50.0);
+  void _drawCurvedLine(
+    Canvas canvas,
+    Offset start,
+    Offset end,
+    double startDir,
+    double endDir,
+    List<Offset> routed,
+    Paint paint,
+  ) {
+    if (routed.length == 2) {
+      final distance = (end - start).distance;
+      final curvature = min(distance * 0.25, 80.0);
 
-    final controlPoint1 = Offset(midX - curvature, midY);
-    final controlPoint2 = Offset(midX + curvature, midY);
-
-    final path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        end.dx,
-        end.dy,
+      final cp1 = Offset(
+        start.dx + cos(startDir) * curvature,
+        start.dy + sin(startDir) * curvature,
       );
+      final cp2 = Offset(
+        end.dx + cos(endDir) * curvature,
+        end.dy + sin(endDir) * curvature,
+      );
+
+      final path = Path()
+        ..moveTo(start.dx, start.dy)
+        ..cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, end.dx, end.dy);
+
+      canvas.drawPath(path, paint);
+      return;
+    }
+
+    final path = Path()..moveTo(routed.first.dx, routed.first.dy);
+
+    if (routed.length == 2) {
+      path.lineTo(routed[1].dx, routed[1].dy);
+    } else if (routed.length == 3) {
+      path.lineTo(routed[1].dx, routed[1].dy);
+      path.lineTo(routed[2].dx, routed[2].dy);
+    } else if (routed.length == 4) {
+      final cornerRadius = min(20.0, (routed[1] - routed[0]).distance * 0.4);
+      final direction = (routed[2] - routed[1]).direction;
+
+      path.lineTo(routed[1].dx, routed[1].dy);
+
+      path.quadraticBezierTo(
+        routed[1].dx + cos(direction) * cornerRadius,
+        routed[1].dy + sin(direction) * cornerRadius,
+        routed[2].dx,
+        routed[2].dy,
+      );
+      path.lineTo(routed[3].dx, routed[3].dy);
+    }
 
     canvas.drawPath(path, paint);
   }
 
   void _drawOrthogonalLine(
     Canvas canvas,
-    Offset start,
-    Offset end,
+    List<Offset> routed,
     Paint paint,
   ) {
-    final midX = (start.dx + end.dx) / 2;
+    final path = Path()..moveTo(routed.first.dx, routed.first.dy);
 
-    final path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..lineTo(midX, start.dy)
-      ..lineTo(midX, end.dy)
-      ..lineTo(end.dx, end.dy);
+    for (var i = 1; i < routed.length; i++) {
+      path.lineTo(routed[i].dx, routed[i].dy);
+    }
 
     canvas.drawPath(path, paint);
   }
@@ -134,11 +213,10 @@ class RelationshipLine extends CustomPainter {
     Canvas canvas,
     Offset sourcePoint,
     Offset targetPoint,
+    double sourceDir,
+    double targetDir,
     Color color,
   ) {
-    final sourceDir = _directionFromSource(sourcePoint, targetPoint);
-    final targetDir = _directionFromSource(targetPoint, sourcePoint);
-
     switch (relationship.type) {
       case RelationshipType.hasMany:
         _drawOneBar(canvas, sourcePoint, sourceDir, color);
@@ -157,10 +235,6 @@ class RelationshipLine extends CustomPainter {
         _drawCrowFoot(canvas, targetPoint, targetDir, color);
         break;
     }
-  }
-
-  double _directionFromSource(Offset source, Offset target) {
-    return atan2(target.dy - source.dy, target.dx - source.dx);
   }
 
   void _drawOneBar(Canvas canvas, Offset point, double angle, Color color) {
@@ -222,6 +296,35 @@ class RelationshipLine extends CustomPainter {
         oldDelegate.lineStyle != lineStyle ||
         oldDelegate.notationStyle != notationStyle ||
         oldDelegate.normalColor != normalColor ||
-        oldDelegate.highlightedColor != highlightedColor;
+        oldDelegate.highlightedColor != highlightedColor ||
+        oldDelegate.obstacleRects != obstacleRects;
+  }
+}
+
+class LineSegment {
+  final Offset a;
+  final Offset b;
+
+  LineSegment(this.a, this.b);
+
+  bool intersectsRect(Rect rect) {
+    if (rect.contains(a) || rect.contains(b)) return true;
+
+    if (_intersectsEdge(rect.topLeft, rect.topRight)) return true;
+    if (_intersectsEdge(rect.topRight, rect.bottomRight)) return true;
+    if (_intersectsEdge(rect.bottomRight, rect.bottomLeft)) return true;
+    if (_intersectsEdge(rect.bottomLeft, rect.topLeft)) return true;
+
+    return false;
+  }
+
+  bool _intersectsEdge(Offset c, Offset d) {
+    final cross = (b.dx - a.dx) * (d.dy - c.dy) - (b.dy - a.dy) * (d.dx - c.dx);
+    if (cross.abs() < 1e-10) return false;
+
+    final t = ((c.dx - a.dx) * (d.dy - c.dy) - (c.dy - a.dy) * (d.dx - c.dx)) / cross;
+    final u = ((c.dx - a.dx) * (b.dy - a.dy) - (c.dy - a.dy) * (b.dx - a.dx)) / cross;
+
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
   }
 }

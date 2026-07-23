@@ -51,12 +51,30 @@ dart run build_runner watch --delete-conflicting-outputs
 - **Models**: Freezed classes in `domain/models/`
 - **Providers**: Riverpod StateNotifier + Provider
 - **Widgets**: Stateless where possible, ConsumerWidget for Riverpod
+- **ERD Viewer**: CustomPainter for canvas, TableNode widgets, RelationshipLine painter
+  - Bezier curves with directional control points
+  - Obstacle avoidance using LineSegment intersection detection
+  - Color-coding by relationship type via AppColors theme extension
 
 ### Testing
 
 - **Unit tests**: `test/unit/` — Parsers, exporters, utilities
 - **Widget tests**: `test/widget/` — UI components
-- **Integration tests**: `integration_test/` — Full workflows
+- **Integration tests**: `test/integration/` — Full workflows
+
+Run all tests with:
+
+```bash
+flutter test
+```
+
+Or run specific test suites:
+
+```bash
+flutter test test/unit/
+flutter test test/widget/
+flutter test test/integration/
+```
 
 Aim for tests on all new features and bug fixes.
 

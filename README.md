@@ -7,10 +7,15 @@ A desktop & mobile application that analyzes Laravel projects and generates inte
 - **Project Loader** — Select any Laravel project directory; auto-detects migrations and models
 - **Schema Viewer** — Browse tables with search, sort, column details, and relationship badges
 - **ERD Canvas** — Interactive diagram with drag, zoom, grid & force-directed layouts
+  - Smooth bezier curves with directional control points
+  - Color-coded relationships (belongsTo, hasMany, hasOne, belongsToMany)
+  - Obstacle avoidance — lines route around table nodes
+  - Smart edge connection points (connects to nearest table edge)
 - **Export Engine** — 6 formats: Mermaid, DBML, HTML (interactive SVG), Markdown, PlantUML, Graphviz
 - **Onboarding** — 3-screen intro for first-time users
 - **Settings** — Configure parsing, display, export defaults, and data management
 - **Accessibility** — Screen reader labels, keyboard navigation, scalable text
+- **Theme** — Material 3 with light/dark mode toggle, blue-tinted dark theme
 
 ## Screenshots
 
@@ -117,8 +122,9 @@ lib/
 
 - **State Management**: Riverpod (StateNotifier + Provider)
 - **Data Models**: Freezed (immutable, with JSON serialization)
-- **Design**: Material 3 with deep indigo primary color
+- **Design**: Material 3 with deep indigo primary color, light/dark theme toggle
 - **Architecture Pattern**: Feature-first clean architecture
+- **ERD Rendering**: CustomPainter with bezier curves, obstacle avoidance, type-based coloring
 
 ## How It Works
 
@@ -137,7 +143,7 @@ flutter test test/unit/
 flutter test test/widget/
 
 # Integration tests
-flutter test integration_test/
+flutter test test/integration/
 
 # All tests
 flutter test

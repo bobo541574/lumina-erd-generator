@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../schema_parser/domain/models/table_schema.dart';
 import '../../../schema_parser/domain/models/relationship_schema.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'table_node.dart';
 import 'relationship_line.dart';
 
@@ -34,6 +35,15 @@ class ErdCanvas extends StatelessWidget {
     final gridColor = Theme.of(
       context,
     ).colorScheme.outline.withValues(alpha: 0.06);
+    final appColors = Theme.of(context).extension<AppColors>()!;
+
+    final obstacleRects = tables
+        .where((t) => t.name != selectedTableId)
+        .map((t) {
+      final pos = positions[t.name] ?? Offset.zero;
+      final height = _estimateNodeHeight(t.name);
+      return Rect.fromLTWH(pos.dx, pos.dy, AppConstants.defaultNodeWidth, height);
+    }).toList();
 
     return SizedBox(
       width: 3000,
@@ -45,7 +55,7 @@ class ErdCanvas extends StatelessWidget {
             size: const Size(3000, 3000),
             painter: _GridPainter(gridColor: gridColor),
           ),
-          ..._buildRelationshipLines(),
+          ..._buildRelationshipLines(appColors, obstacleRects),
           ..._buildTableNodes(),
         ],
       ),
@@ -73,7 +83,10 @@ class ErdCanvas extends StatelessWidget {
     }).toList();
   }
 
-  List<Widget> _buildRelationshipLines() {
+  List<Widget> _buildRelationshipLines(
+    AppColors appColors,
+    List<Rect> obstacleRects,
+  ) {
     return relationships.map((rel) {
       final sourcePos = positions[rel.sourceTable];
       final targetPos = positions[rel.targetTable];
@@ -85,6 +98,12 @@ class ErdCanvas extends StatelessWidget {
           selectedTableId != null &&
           (rel.sourceTable == selectedTableId ||
               rel.targetTable == selectedTableId);
+
+      final sourceHeight = _estimateNodeHeight(rel.sourceTable);
+
+      final lineObstacles = obstacleRects.where((r) {
+        return r.topLeft != sourcePos && r.topLeft != targetPos;
+      }).toList();
 
       return Positioned(
         left: 0,
@@ -98,12 +117,13 @@ class ErdCanvas extends StatelessWidget {
               relationship: rel,
               isHighlighted: isHighlighted,
               nodeWidth: AppConstants.defaultNodeWidth,
-              nodeHeight: _estimateNodeHeight(rel.sourceTable),
+              nodeHeight: sourceHeight,
               lineStyle: lineStyle,
               notationStyle: notationStyle,
-              normalColor: _lineColor,
+              normalColor: _colorForType(rel.type, appColors),
               highlightedColor: _highlightColor,
               inferredColor: _inferredColor,
+              obstacleRects: lineObstacles,
             ),
           ),
         ),
@@ -111,9 +131,21 @@ class ErdCanvas extends StatelessWidget {
     }).toList();
   }
 
-  Color get _lineColor => const Color(0x99303F9F);
+  Color _colorForType(RelationshipType type, AppColors appColors) {
+    switch (type) {
+      case RelationshipType.belongsTo:
+        return appColors.foreignKey;
+      case RelationshipType.hasMany:
+        return appColors.explicitRelation;
+      case RelationshipType.hasOne:
+        return appColors.info;
+      case RelationshipType.belongsToMany:
+        return appColors.pivotKey;
+    }
+  }
+
   Color get _highlightColor => Colors.orange;
-  Color get _inferredColor => const Color(0x99EF6C00);
+  Color get _inferredColor => const Color(0xFFFFB74D);
 
   bool _isRelatedToSelected(TableSchema table) {
     if (selectedTableId == null) return false;

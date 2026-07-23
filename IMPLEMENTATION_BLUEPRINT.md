@@ -320,11 +320,16 @@ Features:
    - Foreign keys highlighted
    - Relationship count badge
 3. Relationship lines between tables:
-   - Straight or curved lines
-   - Arrow indicators (one-to-many, many-to-many)
-   - Crow's foot notation
-   - Color coding: blue for migration FK, orange for inferred
-   - Line thickness based on relationship importance
+   - Smooth bezier curves with directional control points
+   - Color coding by relationship type:
+     - belongsTo: foreignKey color (orange)
+     - hasMany: explicitRelation color (indigo)
+     - hasOne: info color (blue)
+     - belongsToMany: pivotKey color (yellow)
+   - Obstacle avoidance — lines route around table nodes
+   - Smart edge connection points (connects to nearest table edge)
+   - Crow's foot notation for cardinality
+   - Line thickness based on highlight state
 4. Controls:
    - Zoom slider or +/- buttons
    - Auto-layout button (simple grid or force-directed)
@@ -337,7 +342,8 @@ Features:
    - Double tap relationship line to see details
 
 Use CustomPainter for the canvas.
-Implement basic force-directed layout algorithm for auto-arrange.
+Implement LineSegment intersection detection for obstacle avoidance.
+Implement force-directed layout algorithm for auto-arrange.
 Cache table positions for consistent reloads.
 ```
 
